@@ -81,7 +81,7 @@ export function resolveTrackCover(
   seriesList?: Series[],
   artists?: Artist[]
 ): string {
-  if (!track) return 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop';
+  if (!track) return '/covers/krishna-smriti.svg';
   
   if (track.coverImage) return track.coverImage;
 
@@ -95,5 +95,5 @@ export function resolveTrackCover(
     if (matchedArtist?.image) return matchedArtist.image;
   }
 
-  return 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop';
+  return '/covers/default-cover.svg';
 }

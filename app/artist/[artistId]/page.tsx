@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Play, Layers, Music, User } from 'lucide-react';
+import { ArrowLeft, Play, Layers, Mic, User } from 'lucide-react';
 import { Artist, Series, AudioTrack } from '@/types/audio';
 import { getArtistById, getAllSeries, getAllTracks } from '@/lib/firestore';
 import { usePlayback } from '@/context/PlaybackContext';
@@ -97,7 +97,7 @@ export default function ArtistDetailPage() {
         <div className="flex-1 space-y-3">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-widest text-accent">
-              Master Speaker / Artist
+              Master Speaker / Author
             </span>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mt-1">
               {artist.name}
@@ -145,8 +145,8 @@ export default function ArtistDetailPage() {
         <div className="space-y-4 pt-6 border-t border-background-border/60">
           <div className="flex items-center justify-between">
             <h3 className="font-serif text-lg font-bold text-foreground flex items-center gap-2">
-              <Music className="w-4 h-4 text-accent" />
-              <span>Recordings & Discourses ({tracks.length})</span>
+              <Mic className="w-4 h-4 text-accent" />
+              <span>Recordings &amp; Discourses ({tracks.length})</span>
             </h3>
 
             <button

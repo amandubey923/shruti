@@ -7,7 +7,7 @@ import {
   Compass,
   Home,
   Heart,
-  ListMusic,
+  Bookmark,
   History,
   Layers,
 } from 'lucide-react';
@@ -16,32 +16,32 @@ import { useLibrary } from '@/context/LibraryContext';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { favorites, playlists } = useLibrary();
+  const { favorites, savedSeries } = useLibrary();
 
   const navLinks = [
-    { label: 'Home', href: '/', icon: Home },
-    { label: 'Explore', href: '/explore', icon: Compass },
-    { label: 'Library', href: '/library', icon: Layers },
+    { label: 'Archive Home', href: '/', icon: Home },
+    { label: 'Browse Catalog', href: '/explore', icon: Compass },
+    { label: 'My Library', href: '/library', icon: Layers },
     {
-      label: 'Favorites',
+      label: 'Saved Audio',
       href: '/library/favorites',
       icon: Heart,
       badge: favorites.length > 0 ? favorites.length : undefined,
     },
     {
-      label: 'Playlists',
-      href: '/playlists',
-      icon: ListMusic,
-      badge: playlists.length > 0 ? playlists.length : undefined,
+      label: 'Saved Series',
+      href: '/library/series',
+      icon: Bookmark,
+      badge: savedSeries.length > 0 ? savedSeries.length : undefined,
     },
-    { label: 'History', href: '/library/history', icon: History },
+    { label: 'Listening History', href: '/library/history', icon: History },
   ];
 
   return (
     <aside className="w-56 flex-shrink-0 hidden lg:flex flex-col border-r border-background-border/60 bg-background/50 backdrop-blur-sm p-4 space-y-6">
       <div className="space-y-1">
         <p className="px-3 text-[11px] font-medium tracking-wider text-foreground-subtle uppercase">
-          Menu
+          Archive
         </p>
         <nav className="space-y-1 pt-1.5" aria-label="Main Navigation">
           {navLinks.slice(0, 3).map((link) => {

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
+  <defs>
+    <linearGradient id="bg-plum" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2A0826"/>
+      <stop offset="50%" stop-color="#1C0519"/>
+      <stop offset="100%" stop-color="#0F020E"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="800" rx="32" fill="url(#bg-plum)"/>
+  <rect x="24" y="24" width="552" height="752" rx="20" fill="none" stroke="#D946EF" stroke-width="1.5" stroke-opacity="0.35"/>
+  <circle cx="36" cy="36" r="3" fill="#E879F9" opacity="0.5"/>
+  <circle cx="564" cy="36" r="3" fill="#E879F9" opacity="0.5"/>
+  <circle cx="36" cy="764" r="3" fill="#E879F9" opacity="0.5"/>
+  <circle cx="564" cy="764" r="3" fill="#E879F9" opacity="0.5"/>
+  
+  <g transform="translate(300, 75)">
+    <rect x="-80" y="-14" width="160" height="28" rx="14" fill="#86198F" fill-opacity="0.3" stroke="#D946EF" stroke-width="1" stroke-opacity="0.4"/>
+    <text text-anchor="middle" y="4" fill="#F5D0FE" font-family="sans-serif" font-size="11" font-weight="600" letter-spacing="3">SHRUTI • ARCHIVE</text>
+  </g>
+
+  <g transform="translate(300, 260)">
+    <path d="M0 -30c-6 10-12 18-12 26a12 12 0 0024 0c0-8-6-16-12-26z" fill="none" stroke="#E879F9" stroke-width="1.5"/>
+    <circle cx="0" cy="4" r="3" fill="#E879F9"/>
+  </g>
+
+  <text text-anchor="middle" x="300" y="380" fill="#FDF4FF" font-family="serif" font-size="32" font-weight="bold" letter-spacing="1">मरे हे जोगी मरो</text>
+  <text text-anchor="middle" x="300" y="425" fill="#F5D0FE" font-family="serif" font-size="20" font-weight="600" letter-spacing="2">MARE HE JOGI MARO</text>
+  
+  <g transform="translate(300, 465)">
+    <line x1="-60" y1="0" x2="-8" y2="0" stroke="#E879F9" stroke-width="1" opacity="0.5"/>
+    <circle cx="0" cy="0" r="2.5" fill="#E879F9" opacity="0.7"/>
+    <line x1="8" y1="0" x2="60" y2="0" stroke="#E879F9" stroke-width="1" opacity="0.5"/>
+  </g>
+
+  <text text-anchor="middle" x="300" y="505" fill="#F5D0FE" font-family="serif" font-style="italic" font-size="14" opacity="0.8">Gorakhnath &amp; The Mystic Path of Rebirth</text>
+
+  <g transform="translate(300, 690)">
+    <text text-anchor="middle" y="-22" fill="#E879F9" font-family="sans-serif" font-size="11" font-weight="600" letter-spacing="3" opacity="0.6">DISCOURSES BY</text>
+    <text text-anchor="middle" y="2" fill="#FDF4FF" font-family="serif" font-size="20" font-weight="bold" letter-spacing="2">OSHO</text>
+    <text text-anchor="middle" y="22" fill="#E879F9" font-family="monospace" font-size="10" letter-spacing="3" opacity="0.4">SACRED ARCHIVE</text>
+  </g>
+</svg>
+

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { Compass, Layers, Music, User } from 'lucide-react';
+import { Compass, Layers, Mic, User } from 'lucide-react';
 import { AudioTrack, Series, Artist } from '@/types/audio';
 import { getAllTracks, getAllSeries, getAllArtists } from '@/lib/firestore';
 import { AudioCard } from '@/components/audio/AudioCard';
@@ -40,15 +40,17 @@ function ExploreContent() {
     loadData();
   }, []);
 
-  const categories = ['All', 'Discourses', 'Meditation', 'Philosophy', 'Music', 'Audiobooks', 'Chants'];
-  const languages = ['All', 'Hindi', 'English', 'Instrumental', 'Sanskrit'];
+  const categories = ['All', 'Discourses', 'Philosophy', 'Upanishads', 'Meditation'];
+  const languages = ['All', 'Hindi', 'English', 'Sanskrit'];
 
   const filteredTracks = useMemo(() => {
     return tracks.filter((t) => {
       const catMatch =
         selectedCategory === 'All' ||
         t.category.toLowerCase() === selectedCategory.toLowerCase() ||
-        (selectedCategory === 'Discourses & Talks' && t.category === 'Discourses');
+        (selectedCategory === 'Discourses' && t.category.includes('Discourses')) ||
+        (selectedCategory === 'Philosophy' && t.category.includes('Philosophy')) ||
+        (selectedCategory === 'Upanishads' && t.category.includes('Upanishad'));
       const langMatch =
         selectedLanguage === 'All' ||
         t.language?.toLowerCase() === selectedLanguage.toLowerCase();
@@ -60,7 +62,10 @@ function ExploreContent() {
     return seriesList.filter((s) => {
       const catMatch =
         selectedCategory === 'All' ||
-        s.category.toLowerCase() === selectedCategory.toLowerCase();
+        s.category.toLowerCase() === selectedCategory.toLowerCase() ||
+        (selectedCategory === 'Discourses' && s.category.includes('Discourses')) ||
+        (selectedCategory === 'Philosophy' && s.category.includes('Philosophy')) ||
+        (selectedCategory === 'Upanishads' && s.category.includes('Upanishad'));
       const langMatch =
         selectedLanguage === 'All' ||
         s.language?.toLowerCase() === selectedLanguage.toLowerCase();
@@ -73,13 +78,13 @@ function ExploreContent() {
       <div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/15 border border-accent/30 text-accent text-xs font-semibold tracking-wider uppercase mb-2">
           <Compass className="w-3.5 h-3.5" />
-          <span>Explore Archives</span>
+          <span>Archival Catalog</span>
         </div>
         <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
-          Discover Sacred Audio & Discourses
+          Browse Audio Archives &amp; Books
         </h1>
         <p className="text-xs sm:text-sm text-foreground-muted mt-1">
-          Explore complete discourses, meditation recordings, classical music, and spiritual series.
+          Explore complete audio series, Upanishadic commentaries, and guided meditation recordings.
         </p>
       </div>
 
@@ -93,8 +98,8 @@ function ExploreContent() {
                 : 'text-foreground-muted hover:text-foreground hover:bg-background-elevated'
             }`}
           >
-            <Music className="w-3.5 h-3.5" />
-            <span>Tracks ({filteredTracks.length})</span>
+            <Mic className="w-3.5 h-3.5" />
+            <span>All Audio ({filteredTracks.length})</span>
           </button>
 
           <button
@@ -106,7 +111,7 @@ function ExploreContent() {
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Series ({filteredSeries.length})</span>
+            <span>Series &amp; Books ({filteredSeries.length})</span>
           </button>
 
           <button
@@ -187,7 +192,7 @@ function ExploreContent() {
         <>
           {filteredTracks.length === 0 ? (
             <div className="py-16 text-center text-foreground-subtle text-sm">
-              No audio tracks match the selected filters.
+              No audio recordings match the selected filters.
             </div>
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -222,28 +227,28 @@ function ExploreContent() {
       )}
 
       {activeTab === 'artists' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {artists.map((artist) => (
             <div
               key={artist.id}
-              className="bg-background-card border border-background-border rounded-2xl p-5 flex flex-col items-center text-center group hover:border-accent/40 transition-all"
+              className="bg-background-card border border-background-border rounded-2xl p-6 flex flex-col items-center text-center group hover:border-accent/40 transition-all"
             >
-              <div className="relative w-20 h-20 rounded-full overflow-hidden mb-3 bg-background-elevated">
+              <div className="relative w-24 h-24 rounded-2xl overflow-hidden mb-4 bg-background-elevated border border-background-border">
                 {artist.image && (
                   <Image
                     src={artist.image}
                     alt={artist.name}
                     fill
-                    sizes="80px"
+                    sizes="96px"
                     className="object-cover group-hover:scale-105 transition-transform"
                   />
                 )}
               </div>
-              <h3 className="font-serif text-base font-bold text-foreground group-hover:text-accent transition-colors">
+              <h3 className="font-serif text-lg font-bold text-foreground group-hover:text-accent transition-colors">
                 {artist.name}
               </h3>
-              <p className="text-xs text-foreground-subtle mt-0.5">{artist.role}</p>
-              <p className="text-xs text-foreground-muted mt-2 line-clamp-3 leading-relaxed">
+              <p className="text-xs text-accent mt-0.5">{artist.role}</p>
+              <p className="text-xs text-foreground-muted mt-3 line-clamp-3 leading-relaxed">
                 {artist.bio}
               </p>
             </div>
@@ -259,7 +264,7 @@ export default function ExplorePage() {
     <Suspense
       fallback={
         <div className="py-24 text-center text-foreground-subtle text-sm">
-          Loading audio catalog...
+          Loading archival catalog...
         </div>
       }
     >
