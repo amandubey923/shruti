@@ -13,8 +13,8 @@ import {
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 import { AudioTrack, Series, Artist, CategoryInfo } from '@/types/audio';
-import { PlaybackProgress, UserFavorite, SavedSeries } from '@/types/user';
-import { Playlist, PlaylistItem } from '@/types/playlist';
+import { PlaybackProgress } from '@/types/user';
+import { Playlist } from '@/types/playlist';
 import { SEED_TRACKS, SEED_SERIES, SEED_ARTISTS, SEED_CATEGORIES } from './seedData';
 
 /* =========================================================================
@@ -44,7 +44,6 @@ export async function getTrackById(id: string): Promise<AudioTrack | null> {
     if (snap.exists()) {
       return { id: snap.id, ...snap.data() } as AudioTrack;
     }
-    // Check by slug
     const qSnap = await getDocs(query(collection(db, 'audio'), where('slug', '==', id), limit(1)));
     if (!qSnap.empty) {
       const d = qSnap.docs[0];
@@ -139,10 +138,8 @@ export function getAllCategories(): CategoryInfo[] {
 }
 
 /* =========================================================================
-   USER DATA (Scoped by userId to comply with Security Rules)
+   USER DATA (Scoped by userId)
    ========================================================================= */
-
-// --- History & Playback Progress ---
 
 export async function saveUserProgress(
   userId: string,
@@ -173,8 +170,6 @@ export async function getUserHistory(userId: string): Promise<PlaybackProgress[]
     return [];
   }
 }
-
-// --- Favorites ---
 
 export async function toggleUserFavorite(
   userId: string,
@@ -208,8 +203,6 @@ export async function getUserFavorites(userId: string): Promise<string[]> {
   }
 }
 
-// --- Saved Series ---
-
 export async function toggleSavedSeries(
   userId: string,
   seriesId: string,
@@ -241,8 +234,6 @@ export async function getUserSavedSeries(userId: string): Promise<string[]> {
     return [];
   }
 }
-
-// --- Playlists ---
 
 export async function createUserPlaylist(
   userId: string,
@@ -336,4 +327,3 @@ export async function deleteUserPlaylist(userId: string, playlistId: string): Pr
     console.error('Error deleting playlist from Firestore:', err);
   }
 }
-

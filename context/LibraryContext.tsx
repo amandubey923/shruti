@@ -54,10 +54,8 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<PlaybackProgress[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
 
-  // Load Initial Library Data (Local or Firestore)
   const refreshLibrary = useCallback(async () => {
     if (user?.uid) {
-      // Authenticated User: Load from Firestore
       try {
         const [cloudFavs, cloudSeries, cloudPlaylists, cloudHistory] = await Promise.all([
           getUserFavorites(user.uid),
@@ -66,7 +64,6 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           getUserHistory(user.uid),
         ]);
 
-        // Merge any remaining local guest favorites into cloud
         try {
           const localFavsRaw = localStorage.getItem(LOCAL_FAVORITES_KEY);
           if (localFavsRaw) {
@@ -90,7 +87,6 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         console.warn('Error refreshing library from Firestore:', err);
       }
     } else {
-      // Guest User: Load from LocalStorage
       try {
         const localFavs = localStorage.getItem(LOCAL_FAVORITES_KEY);
         setFavorites(localFavs ? JSON.parse(localFavs) : []);
@@ -121,7 +117,6 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     refreshLibrary();
   }, [refreshLibrary]);
 
-  // Favorites Handlers
   const toggleFavorite = async (audioId: string) => {
     const isCurrentlyFav = favorites.includes(audioId);
     const updatedFavs = isCurrentlyFav
@@ -139,7 +134,6 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
   const isFavorite = (audioId: string) => favorites.includes(audioId);
 
-  // Saved Series Handlers
   const toggleSaveSeries = async (seriesId: string) => {
     const isCurrentlySaved = savedSeries.includes(seriesId);
     const updated = isCurrentlySaved
@@ -157,7 +151,6 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
   const isSeriesSaved = (seriesId: string) => savedSeries.includes(seriesId);
 
-  // Playlist Handlers
   const createPlaylist = async (name: string, description?: string): Promise<Playlist> => {
     const newPlaylist = await createUserPlaylist(user?.uid || 'guest', name, description);
     const updated = [newPlaylist, ...playlists];
@@ -228,4 +221,3 @@ export function useLibrary() {
   }
   return context;
 }
-

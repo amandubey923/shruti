@@ -23,6 +23,7 @@ import { useLibrary } from '@/context/LibraryContext';
 import { ProgressBar } from './ProgressBar';
 import { SpeedSelector } from './SpeedSelector';
 import { QueueDrawer } from './QueueDrawer';
+import { resolveTrackCover } from '@/lib/utils';
 
 export function MobileFullPlayer() {
   const {
@@ -57,6 +58,7 @@ export function MobileFullPlayer() {
   if (!currentTrack || !isExpandedPlayer) return null;
 
   const isFav = isFavorite(currentTrack.id);
+  const coverUrl = resolveTrackCover(currentTrack);
 
   const handleShare = () => {
     const shareUrl = `${window.location.origin}/track/${currentTrack.slug || currentTrack.id}`;
@@ -114,9 +116,9 @@ export function MobileFullPlayer() {
       {/* Main Center Area: Artwork & Typography */}
       <div className="my-auto py-6 flex flex-col items-center max-w-sm mx-auto w-full">
         <div className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-2xl shadow-black/80 border border-background-border/60 mb-8 bg-background-elevated">
-          {currentTrack.coverImage ? (
+          {coverUrl ? (
             <Image
-              src={currentTrack.coverImage}
+              src={coverUrl}
               alt={currentTrack.title}
               fill
               sizes="300px"
@@ -273,4 +275,3 @@ export function MobileFullPlayer() {
     </div>
   );
 }
-

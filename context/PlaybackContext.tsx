@@ -13,6 +13,7 @@ import { AudioTrack, RepeatMode } from '@/types/audio';
 import { PlaybackProgress } from '@/types/user';
 import { useAuth } from './AuthContext';
 import { saveUserProgress } from '@/lib/firestore';
+import { resolveTrackCover } from '@/lib/utils';
 
 interface PlaybackContextType {
   currentTrack: AudioTrack | null;
@@ -85,7 +86,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     audio.volume = volume;
     audioRef.current = audio;
 
-    // Load saved volume & speed from localStorage
     const savedVol = localStorage.getItem('shruti_volume');
     if (savedVol) {
       const v = parseFloat(savedVol);
@@ -107,7 +107,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
-      // Throttle save progress every 10 seconds during playback
       const now = Date.now();
       if (now - lastSaveTimeRef.current > 10000 && currentTrack) {
         lastSaveTimeRef.current = now;
@@ -152,7 +151,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Save progress helper (localStorage + Firestore)
   const saveProgress = useCallback(
     (track: AudioTrack, pos: number, dur: number) => {
       if (!track || isNaN(pos)) return;
@@ -165,11 +163,11 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         trackTitle: track.title,
         artistName: track.artistName,
         seriesName: track.seriesName,
-        coverImage: track.coverImage,
+        seriesId: track.seriesId,
+        coverImage: resolveTrackCover(track),
         category: typeof track.category === 'string' ? track.category : undefined,
       };
 
-      // Save to localStorage
       try {
         const raw = localStorage.getItem(LOCAL_PROGRESS_KEY);
         const map: Record<string, PlaybackProgress> = raw ? JSON.parse(raw) : {};
@@ -180,7 +178,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         console.warn('localStorage save failed', e);
       }
 
-      // Sync to Firestore if authenticated
       if (user?.uid) {
         saveUserProgress(user.uid, progressData);
       }
@@ -188,7 +185,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     [user?.uid]
   );
 
-  // Play track implementation
   const playTrack = useCallback(
     (track: AudioTrack, initialPosition?: number) => {
       const audio = audioRef.current;
@@ -204,18 +200,15 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         audio.src = track.audioUrl;
         audio.load();
 
-        // Update queue index if part of current queue
         const idx = queue.findIndex((item) => item.id === track.id);
         if (idx !== -1) {
           setQueueIndex(idx);
         } else {
-          // If playing single standalone track, queue it
           setQueue([track]);
           setQueueIndex(0);
         }
       }
 
-      // Check for saved resume position if initialPosition not provided
       let seekPos = initialPosition;
       if (seekPos === undefined && !isSameTrack) {
         try {
@@ -247,7 +240,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
       audio.addEventListener('canplay', onCanPlay);
 
-      // Media Session metadata update
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: track.title,
@@ -255,7 +247,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
           album: track.seriesName || track.albumName || 'SHRUTI Archive',
           artwork: [
             {
-              src: track.coverImage || '/placeholder-artwork.webp',
+              src: resolveTrackCover(track),
               sizes: '512x512',
               type: 'image/webp',
             },
@@ -326,7 +318,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
   const playPrevious = useCallback(() => {
     if (audioRef.current && audioRef.current.currentTime > 5) {
-      // If played > 5s, restart current track
       seek(0);
       return;
     }
@@ -342,7 +333,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     }
   }, [queue, queueIndex, seek, playTrack]);
 
-  // Audio Ended Handler with Repeat logic
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -439,7 +429,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     [playTrack]
   );
 
-  // Global Keyboard Shortcuts (Space, ArrowLeft, ArrowRight, M, N, P)
+  // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeElement = document.activeElement;
@@ -482,7 +472,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [togglePlay, skipTime, toggleMute, playNext, playPrevious]);
 
-  // Register Media Session Action Handlers
   useEffect(() => {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.setActionHandler('play', () => resumeTrack());
@@ -544,4 +533,3 @@ export function usePlayback() {
   }
   return context;
 }
-

@@ -103,7 +103,6 @@ export default function SeriesDetailPage() {
 
   return (
     <div className="space-y-10 animate-fade-in max-w-5xl mx-auto">
-      {/* Back Link */}
       <Link
         href="/explore"
         className="inline-flex items-center gap-2 text-xs font-medium text-foreground-subtle hover:text-foreground transition-colors"
@@ -112,9 +111,7 @@ export default function SeriesDetailPage() {
         <span>Back to Explore</span>
       </Link>
 
-      {/* Series Hero / Header Header */}
       <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
-        {/* Cover Art */}
         <div className="relative w-full md:w-64 aspect-[4/3] md:aspect-square rounded-3xl overflow-hidden shadow-2xl bg-background-elevated flex-shrink-0 border border-background-border/80">
           {series.coverImage ? (
             <Image
@@ -132,7 +129,6 @@ export default function SeriesDetailPage() {
           )}
         </div>
 
-        {/* Details & Actions */}
         <div className="flex-1 space-y-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
@@ -172,7 +168,6 @@ export default function SeriesDetailPage() {
             {series.description}
           </p>
 
-          {/* Action Bar */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               onClick={handlePlayAll}
@@ -220,7 +215,6 @@ export default function SeriesDetailPage() {
         </div>
       </div>
 
-      {/* Series Parts & Tracks List */}
       <div className="space-y-4 pt-4 border-t border-background-border/60">
         <div className="flex items-center justify-between">
           <h3 className="font-serif text-lg font-bold text-foreground">
@@ -251,4 +245,3 @@ export default function SeriesDetailPage() {
     </div>
   );
 }
-

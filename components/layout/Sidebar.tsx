@@ -112,7 +112,6 @@ export function Sidebar() {
         </nav>
       </div>
 
-      {/* Editorial Quotation Card */}
       <div className="mt-auto p-3.5 rounded-xl bg-background-elevated/40 border border-background-border/40 text-[11px] text-foreground-subtle leading-relaxed">
         <span className="font-serif italic text-foreground-muted block mb-1">
           &ldquo;Listening is the deepest art. When you listen totally, the mind ceases.&rdquo;
@@ -122,4 +121,3 @@ export function Sidebar() {
     </aside>
   );
 }
-

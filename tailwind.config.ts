@@ -24,7 +24,7 @@ const config: Config = {
           subtle: '#6E6A62',
         },
         accent: {
-          DEFAULT: '#D97706', // Warm saffron amber
+          DEFAULT: '#D97706',
           hover: '#F59E0B',
           light: '#FDE68A',
           subtle: '#2E1E09',
@@ -55,4 +55,3 @@ const config: Config = {
   plugins: [],
 };
 export default config;
-

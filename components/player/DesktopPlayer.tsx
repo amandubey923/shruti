@@ -25,6 +25,7 @@ import { ProgressBar } from './ProgressBar';
 import { VolumeControl } from './VolumeControl';
 import { SpeedSelector } from './SpeedSelector';
 import { QueueDrawer } from './QueueDrawer';
+import { resolveTrackCover } from '@/lib/utils';
 
 export function DesktopPlayer() {
   const {
@@ -63,6 +64,7 @@ export function DesktopPlayer() {
   if (!currentTrack) return null;
 
   const isFav = isFavorite(currentTrack.id);
+  const coverUrl = resolveTrackCover(currentTrack);
 
   const handleShare = () => {
     const shareUrl = `${window.location.origin}/track/${currentTrack.slug || currentTrack.id}`;
@@ -96,9 +98,9 @@ export function DesktopPlayer() {
           {/* Left: Track Details */}
           <div className="flex items-center gap-3.5 w-1/4 min-w-[220px]">
             <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background-elevated border border-background-border/60 group">
-              {currentTrack.coverImage ? (
+              {coverUrl ? (
                 <Image
-                  src={currentTrack.coverImage}
+                  src={coverUrl}
                   alt={currentTrack.title}
                   fill
                   sizes="48px"
@@ -138,14 +140,11 @@ export function DesktopPlayer() {
 
           {/* Center: Controls & Scrubber */}
           <div className="flex flex-col items-center flex-1 max-w-2xl px-4">
-            {/* Transport Buttons */}
             <div className="flex items-center gap-4 mb-1.5">
               <button
                 onClick={toggleShuffle}
                 className={`p-1.5 rounded-full transition-colors ${
-                  isShuffled
-                    ? 'text-accent'
-                    : 'text-foreground-subtle hover:text-foreground'
+                  isShuffled ? 'text-accent' : 'text-foreground-subtle hover:text-foreground'
                 }`}
                 title={isShuffled ? 'Shuffle Enabled' : 'Shuffle Disabled'}
               >
@@ -202,21 +201,14 @@ export function DesktopPlayer() {
               <button
                 onClick={toggleRepeat}
                 className={`p-1.5 rounded-full transition-colors ${
-                  repeatMode !== 'off'
-                    ? 'text-accent'
-                    : 'text-foreground-subtle hover:text-foreground'
+                  repeatMode !== 'off' ? 'text-accent' : 'text-foreground-subtle hover:text-foreground'
                 }`}
                 title={`Repeat: ${repeatMode}`}
               >
-                {repeatMode === 'one' ? (
-                  <Repeat1 className="w-4 h-4" />
-                ) : (
-                  <Repeat className="w-3.5 h-3.5" />
-                )}
+                {repeatMode === 'one' ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-3.5 h-3.5" />}
               </button>
             </div>
 
-            {/* Scrubber Bar */}
             <ProgressBar
               currentTime={currentTime}
               duration={duration}
@@ -235,9 +227,7 @@ export function DesktopPlayer() {
             <button
               onClick={() => setShowQueue(!showQueue)}
               className={`p-1.5 rounded-lg transition-colors ${
-                showQueue
-                  ? 'bg-accent/15 text-accent'
-                  : 'text-foreground-muted hover:text-foreground hover:bg-background-hover'
+                showQueue ? 'bg-accent/15 text-accent' : 'text-foreground-muted hover:text-foreground hover:bg-background-hover'
               }`}
               title="Queue"
             >
@@ -297,4 +287,3 @@ export function DesktopPlayer() {
     </>
   );
 }
-

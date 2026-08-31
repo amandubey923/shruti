@@ -25,7 +25,6 @@ function ExploreContent() {
   const [tracks, setTracks] = useState<AudioTrack[]>([]);
   const [seriesList, setSeriesList] = useState<Series[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
@@ -37,7 +36,6 @@ function ExploreContent() {
       setTracks(t);
       setSeriesList(s);
       setArtists(a);
-      setLoading(false);
     }
     loadData();
   }, []);
@@ -45,7 +43,6 @@ function ExploreContent() {
   const categories = ['All', 'Discourses', 'Meditation', 'Philosophy', 'Music', 'Audiobooks', 'Chants'];
   const languages = ['All', 'Hindi', 'English', 'Instrumental', 'Sanskrit'];
 
-  // Filtered tracks
   const filteredTracks = useMemo(() => {
     return tracks.filter((t) => {
       const catMatch =
@@ -59,7 +56,6 @@ function ExploreContent() {
     });
   }, [tracks, selectedCategory, selectedLanguage]);
 
-  // Filtered series
   const filteredSeries = useMemo(() => {
     return seriesList.filter((s) => {
       const catMatch =
@@ -74,7 +70,6 @@ function ExploreContent() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
       <div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/15 border border-accent/30 text-accent text-xs font-semibold tracking-wider uppercase mb-2">
           <Compass className="w-3.5 h-3.5" />
@@ -88,7 +83,6 @@ function ExploreContent() {
         </p>
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center justify-between border-b border-background-border/60 pb-3">
         <div className="flex items-center gap-2">
           <button
@@ -154,10 +148,8 @@ function ExploreContent() {
         )}
       </div>
 
-      {/* Category Pills & Language Filter */}
       {activeTab !== 'artists' && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Categories */}
           <div className="flex flex-wrap items-center gap-2">
             {categories.map((cat) => (
               <button
@@ -174,7 +166,6 @@ function ExploreContent() {
             ))}
           </div>
 
-          {/* Language Selector */}
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <span className="text-[11px] text-foreground-subtle">Language:</span>
             <select
@@ -192,7 +183,6 @@ function ExploreContent() {
         </div>
       )}
 
-      {/* Content Rendering */}
       {activeTab === 'tracks' && (
         <>
           {filteredTracks.length === 0 ? (
@@ -277,4 +267,3 @@ export default function ExplorePage() {
     </Suspense>
   );
 }
-

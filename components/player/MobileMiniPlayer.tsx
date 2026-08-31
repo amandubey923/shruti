@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Play, Pause, Heart, Music } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
+import { resolveTrackCover } from '@/lib/utils';
 
 export function MobileMiniPlayer() {
   const {
@@ -23,10 +24,10 @@ export function MobileMiniPlayer() {
 
   const isFav = isFavorite(currentTrack.id);
   const percentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const coverUrl = resolveTrackCover(currentTrack);
 
   return (
     <div className="lg:hidden fixed bottom-16 left-3 right-3 z-40 bg-background-surface/95 backdrop-blur-md border border-background-border rounded-2xl shadow-2xl overflow-hidden transition-all">
-      {/* Micro progress line */}
       <div className="h-0.5 w-full bg-background-hover relative">
         <div
           className="h-full bg-accent transition-all"
@@ -35,16 +36,15 @@ export function MobileMiniPlayer() {
       </div>
 
       <div className="p-2.5 flex items-center justify-between gap-3">
-        {/* Artwork & Info (Tap to expand) */}
         <button
           onClick={() => setIsExpandedPlayer(true)}
           className="flex items-center gap-3 min-w-0 flex-1 text-left"
           aria-label="Expand player"
         >
           <div className="relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-background-elevated">
-            {currentTrack.coverImage ? (
+            {coverUrl ? (
               <Image
-                src={currentTrack.coverImage}
+                src={coverUrl}
                 alt={currentTrack.title}
                 fill
                 sizes="40px"
@@ -67,7 +67,6 @@ export function MobileMiniPlayer() {
           </div>
         </button>
 
-        {/* Quick Actions: Favorite & Play/Pause */}
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => {
@@ -104,4 +103,3 @@ export function MobileMiniPlayer() {
     </div>
   );
 }
-

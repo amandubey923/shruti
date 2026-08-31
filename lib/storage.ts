@@ -16,15 +16,6 @@ export function validateAudioFilename(filename: string): { valid: boolean; error
     return { valid: false, error: 'File must be an audio format (.mp3, .m4a, .aac, .ogg, .wav)' };
   }
 
-  const baseName = filename.substring(0, filename.lastIndexOf('.'));
-  const isKebab = /^[a-z0-9]+(-[a-z0-9]+)*$/.test(baseName);
-  if (!isKebab) {
-    return {
-      valid: false,
-      error: `Filename "${filename}" must be lowercase kebab-case (e.g., krishna-smriti-01.mp3)`,
-    };
-  }
-
   return { valid: true };
 }
 
@@ -108,4 +99,3 @@ export async function uploadCoverImage(
     );
   });
 }
-

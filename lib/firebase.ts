@@ -12,7 +12,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:1234567890:web:abcdef123456',
 };
 
-// Check if valid Firebase configuration is present
+// Verify if live Firebase project keys are configured in .env
 export const isFirebaseConfigured = Boolean(
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
@@ -31,7 +31,6 @@ try {
   storage = getStorage(app);
 } catch (error) {
   console.warn('Firebase initialization notice:', error);
-  // Fallback graceful initialization
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
@@ -42,4 +41,3 @@ export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export { app, auth, db, storage };
-

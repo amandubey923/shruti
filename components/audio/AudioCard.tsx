@@ -7,7 +7,7 @@ import { Play, Pause, Heart, Music } from 'lucide-react';
 import { AudioTrack } from '@/types/audio';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
-import { formatDuration } from '@/lib/utils';
+import { formatDuration, resolveTrackCover } from '@/lib/utils';
 
 interface AudioCardProps {
   track: AudioTrack;
@@ -19,6 +19,7 @@ export function AudioCard({ track }: AudioCardProps) {
 
   const isCurrent = currentTrack?.id === track.id;
   const isFav = isFavorite(track.id);
+  const coverUrl = resolveTrackCover(track);
 
   const handlePlay = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -32,11 +33,10 @@ export function AudioCard({ track }: AudioCardProps) {
 
   return (
     <div className="group relative bg-background-card hover:bg-background-elevated border border-background-border/60 hover:border-background-border rounded-2xl p-3.5 transition-all duration-200 flex flex-col justify-between">
-      {/* Artwork container */}
       <div className="relative aspect-square w-full rounded-xl overflow-hidden mb-3 bg-background-elevated">
-        {track.coverImage ? (
+        {coverUrl ? (
           <Image
-            src={track.coverImage}
+            src={coverUrl}
             alt={track.title}
             fill
             sizes="(max-width: 768px) 100vw, 300px"
@@ -48,14 +48,12 @@ export function AudioCard({ track }: AudioCardProps) {
           </div>
         )}
 
-        {/* Category Tag */}
         {track.category && (
           <span className="absolute top-2 left-2 px-2 py-0.5 bg-background/80 backdrop-blur-md rounded-md text-[10px] uppercase font-semibold tracking-wider text-foreground-muted border border-background-border/40">
             {track.category}
           </span>
         )}
 
-        {/* Favorite Icon */}
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -72,7 +70,6 @@ export function AudioCard({ track }: AudioCardProps) {
           <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
         </button>
 
-        {/* Floating Play Button */}
         <button
           onClick={handlePlay}
           className={`absolute bottom-2.5 right-2.5 w-10 h-10 rounded-full bg-accent text-background flex items-center justify-center shadow-lg transition-all duration-200 transform ${
@@ -90,7 +87,6 @@ export function AudioCard({ track }: AudioCardProps) {
         </button>
       </div>
 
-      {/* Meta details */}
       <div className="min-w-0">
         <Link
           href={`/track/${track.slug || track.id}`}
@@ -110,4 +106,3 @@ export function AudioCard({ track }: AudioCardProps) {
     </div>
   );
 }
-

@@ -1,5 +1,17 @@
 import { AudioTrack, Series, Artist, CategoryInfo } from '@/types/audio';
 
+// Single, deliberate, coherent series cover artworks (archival & elegant)
+export const COVERS = {
+  krishnaSmriti: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop',
+  silentMind: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=800&auto=format&fit=crop',
+  morningRagas: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop',
+  natureOfThought: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=800&auto=format&fit=crop',
+  oshoPortrait: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
+  krishnamurtiPortrait: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=800&auto=format&fit=crop',
+  hariprasadPortrait: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop',
+  anandaPortrait: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?q=80&w=800&auto=format&fit=crop',
+};
+
 export const SEED_CATEGORIES: CategoryInfo[] = [
   {
     id: 'discourses',
@@ -12,21 +24,21 @@ export const SEED_CATEGORIES: CategoryInfo[] = [
     id: 'meditation',
     title: 'Meditation & Stillness',
     description: 'Guided meditations, breathing awareness, and sound-based techniques.',
-    coverImage: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.silentMind,
     count: 8,
   },
   {
     id: 'philosophy',
     title: 'Philosophy & Gita',
     description: 'Explorations of timeless texts, Advaita, Zen, and the Bhagavad Gita.',
-    coverImage: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.natureOfThought,
     count: 10,
   },
   {
     id: 'music',
     title: 'Classical & Ambient',
     description: 'Morning ragas, Indian bamboo flute, sitar, and contemplative soundscapes.',
-    coverImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.morningRagas,
     count: 12,
   },
   {
@@ -52,7 +64,7 @@ export const SEED_ARTISTS: Artist[] = [
     name: 'Osho',
     role: 'Philosopher, Mystic & Speaker',
     bio: 'Spontaneous discourses given to seekers from across the world over three decades, exploring human consciousness, meditation, love, and truth.',
-    image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
+    image: COVERS.oshoPortrait,
     trackCount: 18,
     seriesCount: 4,
     tags: ['Discourses', 'Gita', 'Zen', 'Meditation'],
@@ -63,7 +75,7 @@ export const SEED_ARTISTS: Artist[] = [
     name: 'J. Krishnamurti',
     role: 'Philosopher & Educator',
     bio: 'Talks on the nature of mind, freedom from the known, fear, time, and unconditional inquiry without authority.',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=800&auto=format&fit=crop',
+    image: COVERS.krishnamurtiPortrait,
     trackCount: 6,
     seriesCount: 1,
     tags: ['Philosophy', 'Inquiry', 'Consciousness'],
@@ -74,7 +86,7 @@ export const SEED_ARTISTS: Artist[] = [
     name: 'Pt. Hariprasad Chaurasia',
     role: 'Bansuri Maestro',
     bio: 'Legendary Indian classical flautist renowned worldwide for evoking serene meditative states through deep raga exploration.',
-    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop',
+    image: COVERS.hariprasadPortrait,
     trackCount: 5,
     seriesCount: 1,
     tags: ['Music', 'Classical', 'Flute', 'Raga'],
@@ -85,7 +97,7 @@ export const SEED_ARTISTS: Artist[] = [
     name: 'Ananda Soundscapes',
     role: 'Acoustic Meditation Collective',
     bio: 'Ambient acoustic recordings of singing bowls, natural mountain streams, and drone harmonics designed for deep focus and sleep.',
-    image: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?q=80&w=800&auto=format&fit=crop',
+    image: COVERS.anandaPortrait,
     trackCount: 7,
     seriesCount: 2,
     tags: ['Meditation', 'Sound Healing', 'Ambient'],
@@ -102,9 +114,9 @@ export const SEED_SERIES: Series[] = [
     artistId: 'osho',
     artistName: 'Osho',
     category: 'Discourses',
-    coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.krishnaSmriti,
     totalTracks: 5,
-    totalDuration: 23640, // ~6 hours 34 min
+    totalDuration: 23640,
     trackIds: [
       'krishna-smriti-01',
       'krishna-smriti-02',
@@ -127,9 +139,9 @@ export const SEED_SERIES: Series[] = [
     artistId: 'ananda-soundscapes',
     artistName: 'Ananda Soundscapes',
     category: 'Meditation',
-    coverImage: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.silentMind,
     totalTracks: 3,
-    totalDuration: 5400, // 90 min
+    totalDuration: 5400,
     trackIds: [
       'silent-mind-01',
       'silent-mind-02',
@@ -150,9 +162,9 @@ export const SEED_SERIES: Series[] = [
     artistId: 'hariprasad-chaurasia',
     artistName: 'Pt. Hariprasad Chaurasia',
     category: 'Music',
-    coverImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.morningRagas,
     totalTracks: 3,
-    totalDuration: 7200, // 120 min
+    totalDuration: 7200,
     trackIds: [
       'morning-raga-01',
       'morning-raga-02',
@@ -173,9 +185,9 @@ export const SEED_SERIES: Series[] = [
     artistId: 'j-krishnamurti',
     artistName: 'J. Krishnamurti',
     category: 'Philosophy',
-    coverImage: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.natureOfThought,
     totalTracks: 2,
-    totalDuration: 6600, // 110 min
+    totalDuration: 6600,
     trackIds: [
       'krishnamurti-thought-01',
       'krishnamurti-thought-02',
@@ -189,7 +201,7 @@ export const SEED_SERIES: Series[] = [
 ];
 
 export const SEED_TRACKS: AudioTrack[] = [
-  // Krishna Smriti Series
+  // Krishna Smriti Series (All 5 parts consistently use COVERS.krishnaSmriti)
   {
     id: 'krishna-smriti-01',
     slug: 'krishna-smriti-01',
@@ -202,10 +214,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Krishna Smriti',
     category: 'Discourses',
     language: 'Hindi',
-    duration: 4200, // 1 hr 10 min
+    duration: 4200,
     trackNumber: 1,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=relaxing-mountains-nature-walk-112191.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.krishnaSmriti,
     tags: ['krishna', 'philosophy', 'osho', 'life', 'acceptance'],
     releaseDate: '1970-10-01',
     isDownloadable: true,
@@ -226,10 +238,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Krishna Smriti',
     category: 'Discourses',
     language: 'Hindi',
-    duration: 6952, // 1 hr 55 min 52 sec
+    duration: 6952,
     trackNumber: 2,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=meditation-109038.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.krishnaSmriti,
     tags: ['krishna', 'gita', 'kurukshetra', 'osho', 'awareness'],
     releaseDate: '1970-10-02',
     isDownloadable: true,
@@ -250,10 +262,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Krishna Smriti',
     category: 'Discourses',
     language: 'Hindi',
-    duration: 4164, // 1 hr 09 min 24 sec
+    duration: 4164,
     trackNumber: 3,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=ambient-piano-amp-strings-10711.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.krishnaSmriti,
     tags: ['krishna', 'raas', 'celebration', 'love', 'mysticism'],
     releaseDate: '1970-10-03',
     isDownloadable: true,
@@ -274,10 +286,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Krishna Smriti',
     category: 'Discourses',
     language: 'Hindi',
-    duration: 4320, // 1 hr 12 min
+    duration: 4320,
     trackNumber: 4,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/11/06/audio_946a815a51.mp3?filename=calm-ambient-126245.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.krishnaSmriti,
     tags: ['karma-yoga', 'gita', 'action', 'detachment'],
     releaseDate: '1970-10-04',
     isDownloadable: true,
@@ -298,10 +310,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Krishna Smriti',
     category: 'Discourses',
     language: 'Hindi',
-    duration: 4004, // 1 hr 06 min 44 sec
+    duration: 4004,
     trackNumber: 5,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=relaxing-mountains-nature-walk-112191.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.krishnaSmriti,
     tags: ['freedom', 'leela', 'consciousness', 'osho'],
     releaseDate: '1970-10-05',
     isDownloadable: true,
@@ -311,7 +323,7 @@ export const SEED_TRACKS: AudioTrack[] = [
     createdAt: '2024-01-15T00:00:00Z',
   },
 
-  // Silent Mind Meditations
+  // Silent Mind Meditations (All parts consistently use COVERS.silentMind)
   {
     id: 'silent-mind-01',
     slug: 'silent-mind-01',
@@ -324,10 +336,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Silent Mind: Daily Awakening',
     category: 'Meditation',
     language: 'English',
-    duration: 1800, // 30 min
+    duration: 1800,
     trackNumber: 1,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=meditation-109038.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.silentMind,
     tags: ['breath', 'meditation', 'calm', 'focus'],
     releaseDate: '2024-02-01',
     isDownloadable: true,
@@ -348,10 +360,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Silent Mind: Daily Awakening',
     category: 'Meditation',
     language: 'English',
-    duration: 1800, // 30 min
+    duration: 1800,
     trackNumber: 2,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=ambient-piano-amp-strings-10711.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.silentMind,
     tags: ['sound', 'stillness', 'awareness'],
     releaseDate: '2024-02-02',
     isDownloadable: true,
@@ -372,10 +384,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Silent Mind: Daily Awakening',
     category: 'Meditation',
     language: 'English',
-    duration: 1800, // 30 min
+    duration: 1800,
     trackNumber: 3,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/11/06/audio_946a815a51.mp3?filename=calm-ambient-126245.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.silentMind,
     tags: ['presence', 'being', 'silence'],
     releaseDate: '2024-02-03',
     isDownloadable: true,
@@ -385,7 +397,7 @@ export const SEED_TRACKS: AudioTrack[] = [
     createdAt: '2024-02-01T00:00:00Z',
   },
 
-  // Morning Ragas Trilogy
+  // Morning Ragas Trilogy (All parts consistently use COVERS.morningRagas)
   {
     id: 'morning-raga-01',
     slug: 'morning-raga-01',
@@ -398,10 +410,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Morning Ragas of Sunrise',
     category: 'Music',
     language: 'Instrumental',
-    duration: 2400, // 40 min
+    duration: 2400,
     trackNumber: 1,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=relaxing-mountains-nature-walk-112191.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.morningRagas,
     tags: ['classical', 'raga', 'bhairav', 'flute', 'morning'],
     releaseDate: '2024-02-10',
     isDownloadable: true,
@@ -422,10 +434,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Morning Ragas of Sunrise',
     category: 'Music',
     language: 'Instrumental',
-    duration: 2400, // 40 min
+    duration: 2400,
     trackNumber: 2,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=meditation-109038.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.morningRagas,
     tags: ['classical', 'ahir-bhairav', 'instrumental'],
     releaseDate: '2024-02-10',
     isDownloadable: true,
@@ -446,10 +458,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'Morning Ragas of Sunrise',
     category: 'Music',
     language: 'Instrumental',
-    duration: 2400, // 40 min
+    duration: 2400,
     trackNumber: 3,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=ambient-piano-amp-strings-10711.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.morningRagas,
     tags: ['todi', 'classical', 'teental', 'flute'],
     releaseDate: '2024-02-10',
     isDownloadable: true,
@@ -459,7 +471,7 @@ export const SEED_TRACKS: AudioTrack[] = [
     createdAt: '2024-02-10T00:00:00Z',
   },
 
-  // Krishnamurti Thought & Fear
+  // Krishnamurti Thought & Fear (All parts consistently use COVERS.natureOfThought)
   {
     id: 'krishnamurti-thought-01',
     slug: 'krishnamurti-thought-01',
@@ -472,10 +484,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'The Nature of Thought and Fear',
     category: 'Philosophy',
     language: 'English',
-    duration: 3300, // 55 min
+    duration: 3300,
     trackNumber: 1,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/11/06/audio_946a815a51.mp3?filename=calm-ambient-126245.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.natureOfThought,
     tags: ['krishnamurti', 'philosophy', 'mind', 'observer'],
     releaseDate: '1982-05-12',
     isDownloadable: false,
@@ -496,10 +508,10 @@ export const SEED_TRACKS: AudioTrack[] = [
     seriesName: 'The Nature of Thought and Fear',
     category: 'Philosophy',
     language: 'English',
-    duration: 3300, // 55 min
+    duration: 3300,
     trackNumber: 2,
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=relaxing-mountains-nature-walk-112191.mp3',
-    coverImage: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=800&auto=format&fit=crop',
+    coverImage: COVERS.natureOfThought,
     tags: ['krishnamurti', 'fear', 'time', 'freedom'],
     releaseDate: '1982-05-14',
     isDownloadable: false,
@@ -509,4 +521,3 @@ export const SEED_TRACKS: AudioTrack[] = [
     createdAt: '2024-03-01T00:00:00Z',
   },
 ];
-

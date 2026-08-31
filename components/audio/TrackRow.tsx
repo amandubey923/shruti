@@ -43,7 +43,6 @@ export function TrackRow({ track, index, onPlay }: TrackRowProps) {
     >
       {/* Left: Index / Play Trigger & Details */}
       <div className="flex items-center gap-3.5 min-w-0 flex-1">
-        {/* Track Number / Play Button */}
         <button
           onClick={handlePlayClick}
           className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg text-foreground-subtle group-hover:text-accent hover:bg-background-elevated transition-colors"
@@ -65,7 +64,6 @@ export function TrackRow({ track, index, onPlay }: TrackRowProps) {
           )}
         </button>
 
-        {/* Title, Subtitle, Speaker */}
         <div className="min-w-0 flex-1">
           <Link
             href={`/track/${track.slug || track.id}`}
@@ -131,4 +129,3 @@ export function TrackRow({ track, index, onPlay }: TrackRowProps) {
     </div>
   );
 }
-

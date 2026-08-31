@@ -2,45 +2,32 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, Play, Shuffle, ArrowLeft } from 'lucide-react';
+import { Heart, ArrowLeft, Play } from 'lucide-react';
 import { useLibrary } from '@/context/LibraryContext';
-import { usePlayback } from '@/context/PlaybackContext';
 import { getAllTracks } from '@/lib/firestore';
 import { AudioTrack } from '@/types/audio';
 import { TrackRow } from '@/components/audio/TrackRow';
+import { usePlayback } from '@/context/PlaybackContext';
 
 export default function FavoritesPage() {
   const { favorites } = useLibrary();
-  const { playSeriesAll } = usePlayback();
-  const [allTracks, setAllTracks] = useState<AudioTrack[]>([]);
+  const [favoriteTracks, setFavoriteTracks] = useState<AudioTrack[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { playSeriesAll } = usePlayback();
+
   useEffect(() => {
-    async function loadTracks() {
-      const t = await getAllTracks();
-      setAllTracks(t);
+    async function loadFavs() {
+      const all = await getAllTracks();
+      const favList = all.filter((t) => favorites.includes(t.id));
+      setFavoriteTracks(favList);
       setLoading(false);
     }
-    loadTracks();
-  }, []);
-
-  const favoriteTracks = allTracks.filter((t) => favorites.includes(t.id));
-
-  const handlePlayAll = () => {
-    if (favoriteTracks.length > 0) {
-      playSeriesAll(favoriteTracks, 0);
-    }
-  };
-
-  const handleShuffleAll = () => {
-    if (favoriteTracks.length > 0) {
-      const shuffled = [...favoriteTracks].sort(() => Math.random() - 0.5);
-      playSeriesAll(shuffled, 0);
-    }
-  };
+    loadFavs();
+  }, [favorites]);
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto animate-fade-in">
+    <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">
       <Link
         href="/library"
         className="inline-flex items-center gap-2 text-xs font-medium text-foreground-subtle hover:text-foreground transition-colors"
@@ -49,56 +36,50 @@ export default function FavoritesPage() {
         <span>Back to Library</span>
       </Link>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-background-border/60 pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold tracking-wider uppercase mb-2">
-            <Heart className="w-3.5 h-3.5 fill-current" />
-            <span>Saved Favorites</span>
+          <div className="flex items-center gap-2 text-red-400 mb-1">
+            <Heart className="w-4 h-4 fill-current" />
+            <span className="text-xs uppercase tracking-wider font-semibold">Favorites</span>
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
-            Favorite Tracks & Talks
+            Saved Recordings
           </h1>
-          <p className="text-xs sm:text-sm text-foreground-muted mt-1">
-            {favoriteTracks.length} recordings saved in your collection.
+          <p className="text-xs text-foreground-subtle mt-1">
+            {favoriteTracks.length} recordings in your favorite list.
           </p>
         </div>
 
         {favoriteTracks.length > 0 && (
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={handlePlayAll}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover text-background font-semibold text-xs rounded-full shadow transition-all active:scale-95"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>Play All</span>
-            </button>
-            <button
-              onClick={handleShuffleAll}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-background-elevated hover:bg-background-hover text-foreground font-medium text-xs rounded-full border border-background-border transition-colors"
-            >
-              <Shuffle className="w-3.5 h-3.5" />
-              <span>Shuffle</span>
-            </button>
-          </div>
+          <button
+            onClick={() => playSeriesAll(favoriteTracks, 0)}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-accent hover:bg-accent-hover text-background font-semibold text-xs shadow-md shadow-accent/20 transition-all active:scale-95"
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>Play All</span>
+          </button>
         )}
       </div>
 
-      {favoriteTracks.length === 0 ? (
-        <div className="py-20 text-center space-y-3 bg-background-card rounded-2xl border border-background-border">
-          <Heart className="w-8 h-8 text-foreground-subtle mx-auto" />
-          <h3 className="font-serif text-lg font-medium text-foreground">No Favorites Yet</h3>
-          <p className="text-xs text-foreground-subtle max-w-sm mx-auto">
-            Click the heart icon on any discourse or music track to keep it in your personal collection.
+      {loading ? (
+        <div className="py-16 text-center text-foreground-subtle text-xs">
+          Loading favorites...
+        </div>
+      ) : favoriteTracks.length === 0 ? (
+        <div className="py-16 text-center text-foreground-subtle text-xs bg-background-card rounded-2xl border border-background-border space-y-2">
+          <p className="text-sm text-foreground">No favorite recordings yet</p>
+          <p className="text-xs text-foreground-subtle">
+            Explore the catalog and tap the heart icon on any discourse or raga.
           </p>
           <Link
             href="/explore"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-background font-semibold rounded-full text-xs mt-2"
+            className="inline-block mt-2 px-4 py-1.5 bg-background-elevated hover:bg-background-hover text-accent rounded-full border border-background-border text-xs"
           >
-            <span>Explore Audio</span>
+            Explore Catalog
           </Link>
         </div>
       ) : (
-        <div className="bg-background-card border border-background-border rounded-2xl p-3 divide-y divide-background-border/30">
+        <div className="bg-background-card border border-background-border rounded-2xl p-2 divide-y divide-background-border/30">
           {favoriteTracks.map((track, idx) => (
             <TrackRow
               key={track.id}
@@ -112,4 +93,3 @@ export default function FavoritesPage() {
     </div>
   );
 }
-

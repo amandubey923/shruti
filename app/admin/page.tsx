@@ -1,246 +1,212 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Upload,
-  ShieldCheck,
-  CheckCircle2,
-  AlertTriangle,
-  Music,
-  Image as ImageIcon,
-} from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, Music, Image as ImageIcon, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { validateAudioFilename, uploadAudioFile, uploadCoverImage } from '@/lib/storage';
+import { uploadAudioFile, uploadCoverImage, validateAudioFilename } from '@/lib/storage';
 import { isFirebaseConfigured } from '@/lib/firebase';
-import { AudioTrack } from '@/types/audio';
-import { slugify } from '@/lib/utils';
+import { SEED_CATEGORIES } from '@/lib/seedData';
 
-export default function AdminPage() {
+export default function AdminIngestionPage() {
+  const [file, setFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [artistName, setArtistName] = useState('Osho');
-  const [seriesName, setSeriesName] = useState('Krishna Smriti');
   const [category, setCategory] = useState('Discourses');
+  const [seriesName, setSeriesName] = useState('');
+  const [artistName, setArtistName] = useState('');
   const [language, setLanguage] = useState('Hindi');
-  const [duration, setDuration] = useState('4200');
-  const [trackNumber, setTrackNumber] = useState('1');
   const [description, setDescription] = useState('');
-  const [tags, setTags] = useState('krishna, discourses, philosophy');
+  const [duration, setDuration] = useState('');
   const [isDownloadable, setIsDownloadable] = useState(true);
 
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const validation = validateAudioFilename(file.name);
+  const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selected = e.target.files[0];
+      const validation = validateAudioFilename(selected.name);
       if (!validation.valid) {
-        setStatusMessage({ type: 'error', text: validation.error || 'Invalid filename' });
-      } else {
-        setStatusMessage(null);
+        setStatusMessage({ type: 'error', text: validation.error || 'Invalid file format' });
+        return;
       }
-      setAudioFile(file);
+      setFile(selected);
+      setStatusMessage(null);
     }
   };
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setCoverFile(file);
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setCoverFile(e.target.files[0]);
     }
   };
 
-  const handlePublish = async (e: React.FormEvent) => {
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      setStatusMessage({ type: 'error', text: 'Title is required.' });
+    if (!file) {
+      setStatusMessage({ type: 'error', text: 'Please select an audio file to upload.' });
       return;
     }
 
-    if (audioFile) {
-      const val = validateAudioFilename(audioFile.name);
-      if (!val.valid) {
-        setStatusMessage({ type: 'error', text: val.error! });
-        return;
-      }
-    }
-
-    setLoading(true);
+    setIsUploading(true);
     setStatusMessage(null);
+    setUploadProgress(0);
 
     try {
-      let audioUrl = 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3';
-      let coverUrl = 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop';
-
-      if (isFirebaseConfigured && audioFile) {
-        audioUrl = await uploadAudioFile(
-          audioFile,
-          category,
-          seriesName || artistName,
-          (pct) => setUploadProgress(pct)
-        );
+      if (!isFirebaseConfigured) {
+        throw new Error('Firebase configuration is required for cloud upload. Configure your .env keys.');
       }
 
-      if (isFirebaseConfigured && coverFile) {
+      const audioUrl = await uploadAudioFile(
+        file,
+        category,
+        seriesName || artistName || 'general',
+        (progress) => setUploadProgress(progress)
+      );
+
+      let coverUrl: string | undefined = undefined;
+      if (coverFile) {
         coverUrl = await uploadCoverImage(
           coverFile,
-          'tracks',
-          slugify(title),
-          (pct) => setUploadProgress(pct)
+          seriesName ? 'series' : 'tracks',
+          seriesName || title || 'cover'
         );
       }
-
-      const newTrack: AudioTrack = {
-        id: slugify(title),
-        slug: slugify(title),
-        title: title.trim(),
-        subtitle: subtitle.trim() || undefined,
-        artistName: artistName.trim(),
-        seriesName: seriesName.trim() || undefined,
-        seriesId: seriesName ? slugify(seriesName) : undefined,
-        category,
-        language,
-        duration: parseInt(duration, 10) || 0,
-        trackNumber: parseInt(trackNumber, 10) || 1,
-        audioUrl,
-        coverImage: coverUrl,
-        description: description.trim() || undefined,
-        tags: tags.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
-        isDownloadable,
-        published: true,
-        createdAt: new Date().toISOString(),
-      };
 
       setStatusMessage({
         type: 'success',
-        text: `Track "${newTrack.title}" validated and prepared successfully for distribution!`,
+        text: `Audio published successfully! Live URL: ${audioUrl.slice(0, 45)}...`,
       });
 
       // Reset form
-      setTitle('');
-      setSubtitle('');
-      setDescription('');
-      setAudioFile(null);
+      setFile(null);
       setCoverFile(null);
-      setUploadProgress(null);
+      setTitle('');
+      setDescription('');
+      setDuration('');
     } catch (err: any) {
-      console.error(err);
       setStatusMessage({
         type: 'error',
-        text: err.message || 'Failed to upload audio or publish metadata.',
+        text: err.message || 'Upload failed. Please check network and permissions.',
       });
     } finally {
-      setLoading(false);
+      setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-      <div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/15 border border-accent/30 text-accent text-xs font-semibold tracking-wider uppercase mb-2">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Curator & Ingestion</span>
+    <div className="max-w-3xl mx-auto py-8 space-y-8 animate-fade-in">
+      <div className="border-b border-background-border/60 pb-6">
+        <div className="flex items-center gap-2 text-accent mb-1">
+          <ShieldAlert className="w-4 h-4" />
+          <span className="text-xs uppercase tracking-wider font-semibold">Curation Portal</span>
         </div>
         <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
-          Audio Ingestion Portal
+          Admin Audio Ingestion
         </h1>
-        <p className="text-xs sm:text-sm text-foreground-muted mt-1">
-          Upload legally verified recordings, validate naming conventions, and publish structured metadata.
+        <p className="text-xs text-foreground-subtle mt-1">
+          Upload and archive audio recordings with standardized kebab-case names and metadata.
         </p>
       </div>
 
+      {!isFirebaseConfigured && (
+        <div className="p-4 rounded-2xl bg-accent/10 border border-accent/30 text-accent text-xs leading-relaxed">
+          <p className="font-semibold mb-1">Notice: Local Development Mode</p>
+          <p className="text-foreground-muted">
+            Firebase credentials are not yet configured in `.env`. Live uploads to Firebase Storage require active keys.
+          </p>
+        </div>
+      )}
+
       {statusMessage && (
         <div
-          className={`p-4 rounded-2xl border text-xs flex items-start gap-3 animate-fade-in ${
+          className={`p-4 rounded-2xl flex items-center gap-3 text-xs ${
             statusMessage.type === 'success'
-              ? 'bg-green-500/10 border-green-500/30 text-green-300'
-              : 'bg-red-500/10 border-red-500/30 text-red-300'
+              ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+              : 'bg-red-500/10 border border-red-500/30 text-red-400'
           }`}
         >
           {statusMessage.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
           ) : (
-            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
           )}
           <span>{statusMessage.text}</span>
         </div>
       )}
 
-      {/* Guidelines Box */}
-      <div className="p-4 rounded-2xl bg-background-card border border-background-border text-xs text-foreground-muted space-y-2">
-        <h4 className="font-semibold text-foreground flex items-center gap-2">
-          <span>Naming Convention Rules</span>
-        </h4>
-        <ul className="list-disc list-inside space-y-1 text-foreground-subtle">
-          <li>Audio files must be lowercase kebab-case (e.g. <code className="text-accent">krishna-smriti-01.mp3</code>).</li>
-          <li>Never commit large MP3s to git; upload directly to Firebase Storage via this portal.</li>
-          <li>Ensure track durations are accurately entered in seconds for precise resume timecodes.</li>
-        </ul>
-      </div>
+      <form onSubmit={handleUpload} className="bg-background-card border border-background-border rounded-3xl p-6 sm:p-8 space-y-6">
+        {/* Audio File Selection */}
+        <div>
+          <label className="block text-xs font-semibold text-foreground mb-2">
+            Audio File (.mp3, .m4a, .aac, .ogg)
+          </label>
+          <div className="border-2 border-dashed border-background-border hover:border-accent/40 rounded-2xl p-6 text-center transition-colors cursor-pointer bg-background-elevated/40 relative">
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={handleAudioFileChange}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            />
+            <Music className="w-8 h-8 text-accent mx-auto mb-2" />
+            {file ? (
+              <p className="text-xs font-mono text-foreground font-semibold">{file.name}</p>
+            ) : (
+              <div>
+                <p className="text-xs font-medium text-foreground">Click to select audio recording</p>
+                <p className="text-[10px] text-foreground-subtle mt-0.5">MP3 or M4A recommended (max 500MB)</p>
+              </div>
+            )}
+          </div>
+        </div>
 
-      {/* Ingestion Form */}
-      <form onSubmit={handlePublish} className="bg-background-card border border-background-border/80 rounded-3xl p-6 sm:p-8 space-y-6">
+        {/* Series Cover / Artwork Selection */}
+        <div>
+          <label className="block text-xs font-semibold text-foreground mb-2">
+            Series Cover Artwork (Shared across all episodes/parts of this series)
+          </label>
+          <div className="border border-background-border hover:border-accent/40 rounded-2xl p-4 transition-colors bg-background-elevated/40 relative flex items-center gap-4">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverFileChange}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            />
+            <div className="w-10 h-10 rounded-xl bg-background-elevated flex items-center justify-center text-accent flex-shrink-0">
+              <ImageIcon className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              {coverFile ? (
+                <p className="text-xs font-mono text-foreground truncate">{coverFile.name}</p>
+              ) : (
+                <div>
+                  <p className="text-xs font-medium text-foreground">Select coherent series cover (.webp or .jpg)</p>
+                  <p className="text-[10px] text-foreground-subtle">Recommended: 800x800 square artwork</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-              Track Title *
+            <label className="block text-xs font-medium text-foreground-muted mb-1">
+              Track / Episode Title
             </label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Krishna Smriti — Part 06"
-              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent"
+              placeholder="e.g. Krishna Smriti — Part 01"
+              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-              Subtitle (Optional)
-            </label>
-            <input
-              type="text"
-              value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-              placeholder="e.g. Total Acceptance of Life"
-              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-              Speaker / Artist
-            </label>
-            <input
-              type="text"
-              required
-              value={artistName}
-              onChange={(e) => setArtistName(e.target.value)}
-              placeholder="e.g. Osho, J. Krishnamurti"
-              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-              Series / Collection Name (Optional)
-            </label>
-            <input
-              type="text"
-              value={seriesName}
-              onChange={(e) => setSeriesName(e.target.value)}
-              placeholder="e.g. Krishna Smriti"
-              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
+            <label className="block text-xs font-medium text-foreground-muted mb-1">
               Category
             </label>
             <select
@@ -248,17 +214,42 @@ export default function AdminPage() {
               onChange={(e) => setCategory(e.target.value)}
               className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent"
             >
-              <option value="Discourses">Discourses & Talks</option>
-              <option value="Meditation">Meditation & Stillness</option>
-              <option value="Philosophy">Philosophy & Gita</option>
-              <option value="Music">Classical & Ambient Music</option>
-              <option value="Audiobooks">Audiobooks</option>
-              <option value="Chants">Chants & Mantras</option>
+              {SEED_CATEGORIES.map((c) => (
+                <option key={c.id} value={c.title}>
+                  {c.title}
+                </option>
+              ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
+            <label className="block text-xs font-medium text-foreground-muted mb-1">
+              Series / Collection Name (Optional)
+            </label>
+            <input
+              type="text"
+              value={seriesName}
+              onChange={(e) => setSeriesName(e.target.value)}
+              placeholder="e.g. Krishna Smriti"
+              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted mb-1">
+              Speaker / Artist Name
+            </label>
+            <input
+              type="text"
+              value={artistName}
+              onChange={(e) => setArtistName(e.target.value)}
+              placeholder="e.g. Osho, Pt. Hariprasad Chaurasia"
+              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted mb-1">
               Language
             </label>
             <select
@@ -274,140 +265,65 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-              Duration (Seconds)
+            <label className="block text-xs font-medium text-foreground-muted mb-1">
+              Duration in Seconds (Optional)
             </label>
             <input
               type="number"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              placeholder="e.g. 4200"
-              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground font-mono focus:outline-none focus:border-accent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-              Track Part Number
-            </label>
-            <input
-              type="number"
-              value={trackNumber}
-              onChange={(e) => setTrackNumber(e.target.value)}
-              placeholder="1"
-              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground font-mono focus:outline-none focus:border-accent"
+              placeholder="e.g. 4200 for 1h 10m"
+              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent"
             />
           </div>
         </div>
 
-        {/* Audio File Selection */}
-        <div className="space-y-3 pt-2 border-t border-background-border/40">
-          <label className="block text-xs font-medium text-foreground-muted">
-            Audio Binary File (.mp3, .m4a)
-          </label>
-          <div className="flex items-center gap-3">
-            <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-background-elevated hover:bg-background-hover border border-background-border rounded-xl text-xs text-foreground transition-colors">
-              <Upload className="w-4 h-4 text-accent" />
-              <span>Choose Audio File</span>
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={handleAudioChange}
-                className="hidden"
-              />
-            </label>
-            {audioFile && (
-              <span className="text-xs text-foreground-muted font-mono truncate">
-                {audioFile.name} ({(audioFile.size / (1024 * 1024)).toFixed(1)} MB)
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Cover Artwork Selection */}
-        <div className="space-y-3">
-          <label className="block text-xs font-medium text-foreground-muted">
-            Cover Artwork (.webp, .jpg, .png)
-          </label>
-          <div className="flex items-center gap-3">
-            <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-background-elevated hover:bg-background-hover border border-background-border rounded-xl text-xs text-foreground transition-colors">
-              <ImageIcon className="w-4 h-4 text-accent" />
-              <span>Choose Artwork</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleCoverChange}
-                className="hidden"
-              />
-            </label>
-            {coverFile && (
-              <span className="text-xs text-foreground-muted font-mono truncate">
-                {coverFile.name}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Tags and Description */}
         <div>
-          <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-            Tags (comma separated)
-          </label>
-          <input
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="krishna, gita, discourses, awareness"
-            className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-            Discourse Description & Notes
+          <label className="block text-xs font-medium text-foreground-muted mb-1">
+            Description & Discourse Reflections
           </label>
           <textarea
-            rows={4}
+            rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Provide context and summary of the discourse..."
-            className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent resize-none"
+            placeholder="Add discourse summary, chapter notes, or quotes..."
+            className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent resize-none"
           />
         </div>
 
-        {/* Downloadable Toggle */}
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
             id="downloadable"
             checked={isDownloadable}
             onChange={(e) => setIsDownloadable(e.target.checked)}
-            className="w-4 h-4 rounded accent-accent"
+            className="rounded bg-background-elevated border-background-border text-accent focus:ring-accent"
           />
           <label htmlFor="downloadable" className="text-xs text-foreground-muted cursor-pointer">
-            Allow users to download this audio recording
+            Allow listeners to download this recording for offline use
           </label>
         </div>
 
         {uploadProgress !== null && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-foreground-subtle">
-              <span>Uploading to Firebase Storage...</span>
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs font-mono text-foreground-subtle">
+              <span>Uploading to Storage...</span>
               <span>{uploadProgress}%</span>
             </div>
-            <div className="w-full h-1.5 bg-background-hover rounded-full overflow-hidden">
-              <div className="h-full bg-accent transition-all" style={{ width: `${uploadProgress}%` }} />
+            <div className="w-full h-2 bg-background-elevated rounded-full overflow-hidden">
+              <div
+                className="h-full bg-accent transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
             </div>
           </div>
         )}
 
-        <div className="flex justify-end pt-2">
-          <Button type="submit" isLoading={loading} className="text-xs sm:text-sm">
-            Validate & Publish Recording
-          </Button>
-        </div>
+        <Button type="submit" isLoading={isUploading} className="w-full gap-2">
+          <Upload className="w-4 h-4" />
+          <span>Publish to SHRUTI Archive</span>
+        </Button>
       </form>
     </div>
   );
 }
-

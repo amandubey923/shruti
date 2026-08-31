@@ -57,4 +57,3 @@ export function SpeedSelector({ currentSpeed, onSpeedChange }: SpeedSelectorProp
     </div>
   );
 }
-

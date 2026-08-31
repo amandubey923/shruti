@@ -103,4 +103,3 @@ export function subscribeToAuthState(callback: (user: FirebaseUser | null) => vo
   }
   return onAuthStateChanged(auth, callback);
 }
-

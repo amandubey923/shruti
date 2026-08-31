@@ -60,4 +60,3 @@ export function BottomNavigation({ onOpenSearch }: BottomNavigationProps) {
     </nav>
   );
 }
-

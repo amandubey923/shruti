@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { X, Trash2, Music } from 'lucide-react';
 import { AudioTrack } from '@/types/audio';
-import { formatDuration } from '@/lib/utils';
+import { formatDuration, resolveTrackCover } from '@/lib/utils';
 
 interface QueueDrawerProps {
   isOpen: boolean;
@@ -34,7 +34,6 @@ export function QueueDrawer({
         onClick={onClose}
       />
       <div className="fixed bottom-24 right-4 w-96 max-w-[calc(100vw-2rem)] max-h-[520px] bg-background-surface border border-background-border rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-slide-up">
-        {/* Header */}
         <div className="p-4 border-b border-background-border/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Music className="w-4 h-4 text-accent" />
@@ -61,7 +60,6 @@ export function QueueDrawer({
           </div>
         </div>
 
-        {/* List of Tracks */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1 divide-y divide-background-border/20">
           {queue.length === 0 ? (
             <div className="py-12 text-center text-foreground-subtle text-xs">
@@ -70,6 +68,8 @@ export function QueueDrawer({
           ) : (
             queue.map((track, idx) => {
               const isCurrent = idx === queueIndex;
+              const cover = resolveTrackCover(track);
+
               return (
                 <div
                   key={`${track.id}-${idx}`}
@@ -84,9 +84,9 @@ export function QueueDrawer({
                     className="flex items-center gap-3 text-left flex-1 min-w-0"
                   >
                     <div className="relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-background-elevated">
-                      {track.coverImage ? (
+                      {cover ? (
                         <Image
-                          src={track.coverImage}
+                          src={cover}
                           alt={track.title}
                           fill
                           sizes="36px"
@@ -134,4 +134,3 @@ export function QueueDrawer({
     </>
   );
 }
-

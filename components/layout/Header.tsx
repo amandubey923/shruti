@@ -47,7 +47,6 @@ export function Header({ onOpenSearch }: HeaderProps) {
 
         {/* Actions & User Navigation */}
         <div className="flex items-center gap-3">
-          {/* Mobile Search Icon */}
           <button
             onClick={onOpenSearch}
             className="p-2 text-foreground-muted hover:text-foreground md:hidden rounded-full hover:bg-background-elevated transition-colors"
@@ -140,4 +139,3 @@ export function Header({ onOpenSearch }: HeaderProps) {
     </header>
   );
 }
-

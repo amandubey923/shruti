@@ -16,7 +16,6 @@ import { usePlayback } from '@/context/PlaybackContext';
 import { AudioCard } from '@/components/audio/AudioCard';
 import { SeriesCard } from '@/components/audio/SeriesCard';
 import { CategoryCard } from '@/components/audio/CategoryCard';
-import { TrackRow } from '@/components/audio/TrackRow';
 import { formatDuration } from '@/lib/utils';
 
 export default function HomePage() {
@@ -25,7 +24,6 @@ export default function HomePage() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [lastProgress, setLastProgress] = useState<PlaybackProgress | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const { playTrack, playSeriesAll } = usePlayback();
 
@@ -41,7 +39,6 @@ export default function HomePage() {
       setArtists(allA);
       setCategories(getAllCategories());
 
-      // Check last listened audio from localStorage
       try {
         const raw = localStorage.getItem('shruti_playback_progress');
         if (raw) {
@@ -56,8 +53,6 @@ export default function HomePage() {
       } catch (e) {
         console.warn('Could not read last progress', e);
       }
-
-      setLoading(false);
     }
     loadContent();
   }, []);
@@ -116,11 +111,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Subtle Ambient Radial Glow */}
         <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-radial-gradient from-accent/10 to-transparent pointer-events-none opacity-50" />
       </section>
 
-      {/* Continue Listening Banner (if previous session exists) */}
+      {/* Continue Listening Banner */}
       {lastProgress && (
         <section className="bg-accent/10 border border-accent/30 rounded-2xl p-4 flex items-center justify-between gap-4 animate-slide-up">
           <div className="flex items-center gap-3.5 min-w-0">
@@ -150,7 +144,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Featured Collection / Master Series Spotlight */}
+      {/* Featured Collection Spotlight */}
       {featuredSeries && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -310,4 +304,3 @@ export default function HomePage() {
     </div>
   );
 }
-

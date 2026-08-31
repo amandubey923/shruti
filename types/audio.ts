@@ -27,7 +27,7 @@ export interface AudioTrack {
   duration: number; // in seconds
   trackNumber?: number;
   audioUrl: string;
-  coverImage?: string;
+  coverImage?: string; // Optional track-level override; inherits series/album cover by default
   tags?: string[];
   releaseDate?: string;
   isExplicit?: boolean;
@@ -47,7 +47,7 @@ export interface Series {
   artistId?: string;
   artistName: string;
   category: AudioCategory | string;
-  coverImage: string;
+  coverImage: string; // The primary, consistent cover image for the entire series
   totalTracks: number;
   totalDuration: number; // in seconds
   trackIds: string[];
@@ -65,7 +65,7 @@ export interface Artist {
   name: string;
   bio?: string;
   image?: string;
-  role?: string; // e.g. "Philosopher & Mystic", "Classical Maestro"
+  role?: string;
   trackCount?: number;
   seriesCount?: number;
   tags?: string[];
@@ -81,4 +81,3 @@ export interface CategoryInfo {
 }
 
 export type RepeatMode = 'off' | 'all' | 'one';
-

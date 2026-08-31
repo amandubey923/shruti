@@ -38,14 +38,12 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md' }: Mod
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Modal Dialog */}
       <div
         className={cn(
           'relative w-full bg-background-surface border border-background-border rounded-2xl p-6 shadow-2xl z-10 animate-fade-in',
@@ -70,4 +68,3 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md' }: Mod
     </div>
   );
 }
-

@@ -59,9 +59,7 @@ export function ProgressBar({
         onMouseLeave={handleMouseLeave}
         className="relative flex-1 h-2 py-1.5 flex items-center cursor-pointer group"
       >
-        {/* Track Background */}
         <div className="w-full h-1 bg-background-hover rounded-full overflow-hidden relative">
-          {/* Buffered / Hover preview bar */}
           {hoverPosition !== null && (
             <div
               className="absolute top-0 bottom-0 left-0 bg-foreground-muted/20 transition-all rounded-full"
@@ -69,20 +67,17 @@ export function ProgressBar({
             />
           )}
 
-          {/* Current Progress bar */}
           <div
             className="h-full bg-accent rounded-full transition-all group-hover:bg-accent-hover"
             style={{ width: `${percentage}%` }}
           />
         </div>
 
-        {/* Scrubber Knob */}
         <div
           className="absolute w-3 h-3 bg-accent rounded-full -ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md pointer-events-none ring-2 ring-accent/30"
           style={{ left: `${percentage}%` }}
         />
 
-        {/* Hover Time Tooltip */}
         {hoverPosition !== null && hoverTime !== null && (
           <div
             className="absolute -top-7 transform -translate-x-1/2 px-1.5 py-0.5 bg-background-surface border border-background-border rounded text-[10px] font-mono text-foreground shadow-lg pointer-events-none"
@@ -101,4 +96,3 @@ export function ProgressBar({
     </div>
   );
 }
-

@@ -23,7 +23,6 @@ export function SeriesCard({ series, featured = false }: SeriesCardProps) {
         featured ? 'md:col-span-2 md:flex-row' : ''
       }`}
     >
-      {/* Artwork container */}
       <div
         className={`relative overflow-hidden bg-background-elevated ${
           featured
@@ -45,15 +44,12 @@ export function SeriesCard({ series, featured = false }: SeriesCardProps) {
           </div>
         )}
 
-        {/* Gradient Overlay for depth */}
         <div className="absolute inset-0 bg-gradient-to-t from-background-card via-transparent to-transparent opacity-80" />
 
-        {/* Category tag */}
         <span className="absolute top-3 left-3 px-2.5 py-0.5 bg-background/80 backdrop-blur-md rounded-md text-[10px] uppercase font-semibold tracking-wider text-accent border border-background-border/50">
           {series.category}
         </span>
 
-        {/* Save button */}
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -69,8 +65,7 @@ export function SeriesCard({ series, featured = false }: SeriesCardProps) {
         </button>
       </div>
 
-      {/* Content Meta */}
-      <div className={`p-4 sm:p-5 flex flex-col justify-between flex-1`}>
+      <div className="p-4 sm:p-5 flex flex-col justify-between flex-1">
         <div>
           <div className="flex items-center gap-2 text-[11px] text-foreground-subtle mb-1">
             <span className="font-medium text-foreground-muted">{series.artistName}</span>
@@ -97,7 +92,6 @@ export function SeriesCard({ series, featured = false }: SeriesCardProps) {
           </p>
         </div>
 
-        {/* Action Link */}
         <div className="mt-4 pt-3 border-t border-background-border/40 flex items-center justify-between">
           <Link
             href={`/series/${series.slug || series.id}`}
@@ -117,4 +111,3 @@ export function SeriesCard({ series, featured = false }: SeriesCardProps) {
     </div>
   );
 }
-

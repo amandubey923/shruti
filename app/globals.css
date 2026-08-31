@@ -18,7 +18,7 @@
   }
 }
 
-/* Custom Scrollbar for sleek dark feel */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -37,7 +37,6 @@
   background: #383842;
 }
 
-/* Line clamp utilities */
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -58,4 +57,3 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-

@@ -1,15 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Mail, User, AlertCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { registerWithEmail, loginWithGoogle, isConfigured } = useAuth();
+  const { registerWithEmail, loginWithGoogle } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -17,7 +16,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
@@ -26,15 +25,10 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
     try {
-      await registerWithEmail(email, password, name.trim());
-      router.push('/library');
+      await registerWithEmail(email, password, name.trim() || undefined);
+      router.push('/');
     } catch (err: any) {
-      console.error(err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('An account already exists with this email.');
-      } else {
-        setError(err.message || 'Registration failed. Please check your credentials.');
-      }
+      setError(err.message || 'Failed to create account.');
     } finally {
       setLoading(false);
     }
@@ -45,145 +39,128 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await loginWithGoogle();
-      router.push('/library');
+      router.push('/');
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Google sign-in was cancelled or failed.');
+      setError(err.message || 'Google sign-up was cancelled.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[75vh] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-background-card border border-background-border/80 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <span className="font-serif tracking-widest text-2xl font-bold text-foreground">
-            SHRUTI
-          </span>
-          <h2 className="text-lg sm:text-xl font-bold text-foreground">
-            Create Your Account
-          </h2>
-          <p className="text-xs text-foreground-muted">
-            Join the listening archive. Keep your playlists and progress synchronized everywhere.
-          </p>
+    <div className="max-w-md mx-auto py-12 px-4 animate-fade-in">
+      <div className="text-center mb-8">
+        <Link href="/" className="inline-block font-serif text-2xl font-bold tracking-widest text-foreground hover:text-accent transition-colors">
+          SHRUTI
+        </Link>
+        <h1 className="font-serif text-xl font-bold text-foreground mt-3">
+          Create Your Listening Account
+        </h1>
+        <p className="text-xs text-foreground-subtle mt-1">
+          Begin your journey into wisdom and sacred sound.
+        </p>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+          {error}
         </div>
+      )}
 
-        {!isConfigured && (
-          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <span>
-              Firebase credentials are not set in .env yet. You can still browse and listen offline.
-            </span>
-          </div>
-        )}
-
-        {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-xs flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Google Signup */}
-        <button
+      <div className="bg-background-surface border border-background-border rounded-2xl p-6 shadow-xl space-y-4">
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full gap-2 text-xs"
           onClick={handleGoogleSignup}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-background-elevated hover:bg-background-hover border border-background-border text-foreground font-medium text-xs sm:text-sm rounded-full transition-all active:scale-[0.98] shadow-sm disabled:opacity-50"
+          isLoading={loading}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path
-              fill="#4285F4"
-              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17Z"
+              fill="currentColor"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
             />
             <path
-              fill="#34A853"
-              d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"
+              fill="currentColor"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
             />
             <path
-              fill="#FBBC05"
-              d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.97 0 12s.45 3.84 1.25 5.42l4.03-3.15Z"
+              fill="currentColor"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
             />
             <path
-              fill="#EA4335"
-              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"
+              fill="currentColor"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
           <span>Sign Up with Google</span>
-        </button>
+        </Button>
 
-        <div className="flex items-center gap-3">
-          <div className="h-px bg-background-border/60 flex-1" />
-          <span className="text-[10px] uppercase font-semibold text-foreground-subtle">or</span>
-          <div className="h-px bg-background-border/60 flex-1" />
+        <div className="flex items-center my-4">
+          <div className="flex-1 border-t border-background-border" />
+          <span className="px-3 text-[10px] text-foreground-subtle uppercase tracking-wider">
+            or
+          </span>
+          <div className="flex-1 border-t border-background-border" />
         </div>
 
-        {/* Email Signup Form */}
-        <form onSubmit={handleSignup} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-              Your Name
+            <label className="block text-xs font-medium text-foreground-muted mb-1">
+              Your Name (Optional)
             </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-foreground-subtle absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Seeker / Listener"
-                className="w-full bg-background-elevated border border-background-border rounded-xl pl-10 pr-3.5 py-2 text-xs sm:text-sm text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent"
-              />
-            </div>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Seeker"
+              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-sm text-foreground focus:outline-none focus:border-accent"
+            />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
+            <label className="block text-xs font-medium text-foreground-muted mb-1">
               Email Address
             </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-foreground-subtle absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full bg-background-elevated border border-background-border rounded-xl pl-10 pr-3.5 py-2 text-xs sm:text-sm text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent"
-              />
-            </div>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="listener@domain.com"
+              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-sm text-foreground focus:outline-none focus:border-accent"
+            />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5">
-              Password (6+ chars)
+            <label className="block text-xs font-medium text-foreground-muted mb-1">
+              Password (min. 6 characters)
             </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-foreground-subtle absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-background-elevated border border-background-border rounded-xl pl-10 pr-3.5 py-2 text-xs sm:text-sm text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-accent"
-              />
-            </div>
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-sm text-foreground focus:outline-none focus:border-accent"
+            />
           </div>
 
-          <Button type="submit" className="w-full text-xs sm:text-sm" isLoading={loading}>
+          <Button type="submit" className="w-full text-xs" isLoading={loading}>
             Create Account
           </Button>
         </form>
 
-        <div className="text-center text-xs text-foreground-subtle pt-2">
-          <span>Already have an account? </span>
-          <Link href="/login" className="text-accent hover:underline font-medium">
-            Sign In
-          </Link>
+        <div className="text-center pt-2">
+          <p className="text-xs text-foreground-subtle">
+            Already have an account?{' '}
+            <Link href="/login" className="text-accent hover:underline font-medium">
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </div>
   );
 }
-

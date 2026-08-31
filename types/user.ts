@@ -18,6 +18,7 @@ export interface PlaybackProgress {
   trackTitle?: string;
   artistName?: string;
   seriesName?: string;
+  seriesId?: string;
   coverImage?: string;
   category?: string;
 }
@@ -32,4 +33,3 @@ export interface SavedSeries {
   seriesId: string;
   savedAt: string;
 }
-

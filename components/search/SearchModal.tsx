@@ -7,7 +7,7 @@ import { Search, X, Play, Music, Layers, User, ArrowRight } from 'lucide-react';
 import { AudioTrack, Series, Artist } from '@/types/audio';
 import { getAllTracks, getAllSeries, getAllArtists } from '@/lib/firestore';
 import { usePlayback } from '@/context/PlaybackContext';
-import { formatDuration } from '@/lib/utils';
+import { formatDuration, resolveTrackCover } from '@/lib/utils';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -19,7 +19,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [tracks, setTracks] = useState<AudioTrack[]>([]);
   const [seriesList, setSeriesList] = useState<Series[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [loading, setLoading] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { playTrack } = usePlayback();
@@ -34,7 +33,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       setTracks(t);
       setSeriesList(s);
       setArtists(a);
-      setLoading(false);
     }
     loadData();
   }, []);
@@ -47,7 +45,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   }, [isOpen]);
 
-  // Filtered Results
   const filteredResults = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return { tracks: [], series: [], artists: [] };
@@ -94,15 +91,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4">
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      {/* Modal Card */}
       <div className="relative w-full max-w-2xl bg-background-surface border border-background-border rounded-2xl shadow-2xl overflow-hidden z-10 animate-fade-in flex flex-col max-h-[80vh]">
-        {/* Search Input Bar */}
         <div className="p-4 border-b border-background-border/60 flex items-center gap-3">
           <Search className="w-5 h-5 text-accent flex-shrink-0" />
           <input
@@ -129,7 +123,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           </button>
         </div>
 
-        {/* Results Container */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           {query.trim() === '' ? (
             <div className="py-8 text-center">
@@ -147,7 +140,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             </div>
           ) : (
             <>
-              {/* Tracks Section */}
               {filteredResults.tracks.length > 0 && (
                 <div>
                   <h4 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle mb-2.5 flex items-center gap-1.5">
@@ -155,63 +147,65 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     <span>Audio Tracks</span>
                   </h4>
                   <div className="space-y-1">
-                    {filteredResults.tracks.map((track) => (
-                      <div
-                        key={track.id}
-                        className="flex items-center justify-between p-2 rounded-xl hover:bg-background-hover transition-colors group"
-                      >
-                        <button
-                          onClick={() => {
-                            playTrack(track);
-                            onClose();
-                          }}
-                          className="flex items-center gap-3 text-left flex-1 min-w-0"
+                    {filteredResults.tracks.map((track) => {
+                      const cover = resolveTrackCover(track);
+                      return (
+                        <div
+                          key={track.id}
+                          className="flex items-center justify-between p-2 rounded-xl hover:bg-background-hover transition-colors group"
                         >
-                          <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-background-elevated">
-                            {track.coverImage ? (
-                              <Image
-                                src={track.coverImage}
-                                alt={track.title}
-                                fill
-                                sizes="40px"
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-accent">
-                                <Play className="w-4 h-4" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium text-foreground truncate group-hover:text-accent transition-colors">
-                              {track.title}
-                            </p>
-                            <p className="text-[11px] text-foreground-subtle truncate">
-                              {track.artistName || track.seriesName || 'SHRUTI Archive'}
-                            </p>
-                          </div>
-                        </button>
-
-                        <div className="flex items-center gap-2 ml-2">
-                          <span className="text-[10px] font-mono text-foreground-subtle">
-                            {formatDuration(track.duration)}
-                          </span>
-                          <Link
-                            href={`/track/${track.slug || track.id}`}
-                            onClick={onClose}
-                            className="p-1.5 text-foreground-subtle hover:text-accent transition-colors"
-                            title="View Track"
+                          <button
+                            onClick={() => {
+                              playTrack(track);
+                              onClose();
+                            }}
+                            className="flex items-center gap-3 text-left flex-1 min-w-0"
                           >
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </Link>
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-background-elevated">
+                              {cover ? (
+                                <Image
+                                  src={cover}
+                                  alt={track.title}
+                                  fill
+                                  sizes="40px"
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-accent">
+                                  <Play className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-foreground truncate group-hover:text-accent transition-colors">
+                                {track.title}
+                              </p>
+                              <p className="text-[11px] text-foreground-subtle truncate">
+                                {track.artistName || track.seriesName || 'SHRUTI Archive'}
+                              </p>
+                            </div>
+                          </button>
+
+                          <div className="flex items-center gap-2 ml-2">
+                            <span className="text-[10px] font-mono text-foreground-subtle">
+                              {formatDuration(track.duration)}
+                            </span>
+                            <Link
+                              href={`/track/${track.slug || track.id}`}
+                              onClick={onClose}
+                              className="p-1.5 text-foreground-subtle hover:text-accent transition-colors"
+                              title="View Track"
+                            >
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Series Section */}
               {filteredResults.series.length > 0 && (
                 <div>
                   <h4 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle mb-2.5 flex items-center gap-1.5">
@@ -251,7 +245,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 </div>
               )}
 
-              {/* Speakers & Artists Section */}
               {filteredResults.artists.length > 0 && (
                 <div>
                   <h4 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle mb-2.5 flex items-center gap-1.5">
@@ -297,4 +290,3 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     </div>
   );
 }
-
