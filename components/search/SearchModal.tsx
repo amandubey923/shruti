@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Search, X, Play, Music, Layers, User, ArrowRight } from 'lucide-react';
+import { Search, X, Play, Mic, Layers, User, ArrowRight } from 'lucide-react';
 import { AudioTrack, Series, Artist } from '@/types/audio';
 import { getAllTracks, getAllSeries, getAllArtists } from '@/lib/firestore';
 import { usePlayback } from '@/context/PlaybackContext';
@@ -63,6 +63,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const matchedSeries = seriesList.filter(
       (s) =>
         s.title.toLowerCase().includes(q) ||
+        s.subtitle?.toLowerCase().includes(q) ||
         s.artistName?.toLowerCase().includes(q) ||
         s.description?.toLowerCase().includes(q) ||
         s.tags?.some((tag) => tag.toLowerCase().includes(q))
@@ -92,7 +93,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4">
       <div
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
@@ -104,7 +105,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search discourses, series, ragas, speakers..."
+            placeholder="Search discourses, series, Upanishads, speakers..."
             className="w-full bg-transparent text-sm sm:text-base text-foreground placeholder:text-foreground-subtle focus:outline-none"
           />
           {query && (
@@ -117,7 +118,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           )}
           <button
             onClick={onClose}
-            className="text-xs px-2 py-1 bg-background-elevated hover:bg-background-hover text-foreground-muted rounded-md border border-background-border"
+            className="text-xs px-2.5 py-1 bg-background-elevated hover:bg-background-hover text-foreground-muted rounded-lg border border-background-border"
           >
             Esc
           </button>
@@ -127,24 +128,68 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           {query.trim() === '' ? (
             <div className="py-8 text-center">
               <p className="text-xs text-foreground-subtle">
-                Type keywords like <span className="text-accent font-medium">&quot;Krishna&quot;</span>,{' '}
-                <span className="text-accent font-medium">&quot;Osho&quot;</span>,{' '}
-                <span className="text-accent font-medium">&quot;Raga&quot;</span>, or{' '}
+                Try searching <span className="text-accent font-medium">&quot;Krishna&quot;</span>,{' '}
+                <span className="text-accent font-medium">&quot;Mahaveer&quot;</span>,{' '}
+                <span className="text-accent font-medium">&quot;Upanishad&quot;</span>, or{' '}
                 <span className="text-accent font-medium">&quot;Meditation&quot;</span>
               </p>
             </div>
           ) : !hasResults ? (
             <div className="py-12 text-center text-foreground-subtle">
-              <p className="text-sm">No audio or speakers found for &ldquo;{query}&rdquo;</p>
-              <p className="text-xs mt-1 text-foreground-subtle/80">Try exploring by categories or speakers.</p>
+              <p className="text-sm">No recordings or series found for &ldquo;{query}&rdquo;</p>
+              <p className="text-xs mt-1 text-foreground-subtle/80">Try exploring by series or categories.</p>
             </div>
           ) : (
             <>
+              {/* Series Results */}
+              {filteredResults.series.length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle mb-2.5 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-accent" />
+                    <span>Books &amp; Series</span>
+                  </h4>
+                  <div className="space-y-1">
+                    {filteredResults.series.map((s) => (
+                      <Link
+                        key={s.id}
+                        href={`/series/${s.slug || s.id}`}
+                        onClick={onClose}
+                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background-hover transition-colors group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-background-elevated">
+                            {s.coverImage && (
+                              <Image
+                                src={s.coverImage}
+                                alt={s.title}
+                                fill
+                                sizes="40px"
+                                className="object-cover"
+                              />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-foreground truncate group-hover:text-accent transition-colors">
+                              {s.title}
+                            </p>
+                            <p className="text-[11px] text-foreground-subtle truncate">
+                              {s.artistName} • {s.totalTracks} Parts
+                            </p>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-foreground-subtle group-hover:text-accent ml-2" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Discourses & Audio Results */}
               {filteredResults.tracks.length > 0 && (
                 <div>
                   <h4 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle mb-2.5 flex items-center gap-1.5">
-                    <Music className="w-3.5 h-3.5 text-accent" />
-                    <span>Audio Tracks</span>
+                    <Mic className="w-3.5 h-3.5 text-accent" />
+                    <span>Discourses &amp; Audio</span>
                   </h4>
                   <div className="space-y-1">
                     {filteredResults.tracks.map((track) => {
@@ -194,7 +239,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                               href={`/track/${track.slug || track.id}`}
                               onClick={onClose}
                               className="p-1.5 text-foreground-subtle hover:text-accent transition-colors"
-                              title="View Track"
+                              title="View Audio"
                             >
                               <ArrowRight className="w-3.5 h-3.5" />
                             </Link>
@@ -206,78 +251,43 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 </div>
               )}
 
-              {filteredResults.series.length > 0 && (
-                <div>
-                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle mb-2.5 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-accent" />
-                    <span>Collections & Series</span>
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {filteredResults.series.map((s) => (
-                      <Link
-                        key={s.id}
-                        href={`/series/${s.slug || s.id}`}
-                        onClick={onClose}
-                        className="flex items-center gap-3 p-2.5 rounded-xl bg-background-elevated/40 hover:bg-background-hover border border-background-border/40 transition-colors group"
-                      >
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-background-surface">
-                          {s.coverImage && (
-                            <Image
-                              src={s.coverImage}
-                              alt={s.title}
-                              fill
-                              sizes="48px"
-                              className="object-cover"
-                            />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-foreground truncate group-hover:text-accent transition-colors">
-                            {s.title}
-                          </p>
-                          <p className="text-[10px] text-foreground-subtle">
-                            {s.totalTracks} Parts • {s.artistName}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
+              {/* Speakers */}
               {filteredResults.artists.length > 0 && (
                 <div>
                   <h4 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle mb-2.5 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-accent" />
-                    <span>Speakers & Artists</span>
+                    <span>Speakers</span>
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-1">
                     {filteredResults.artists.map((a) => (
                       <Link
                         key={a.id}
                         href={`/artist/${a.slug || a.id}`}
                         onClick={onClose}
-                        className="flex items-center gap-3 p-2.5 rounded-xl bg-background-elevated/40 hover:bg-background-hover border border-background-border/40 transition-colors group"
+                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background-hover transition-colors group"
                       >
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-background-surface">
-                          {a.image && (
-                            <Image
-                              src={a.image}
-                              alt={a.name}
-                              fill
-                              sizes="40px"
-                              className="object-cover"
-                            />
-                          )}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-background-elevated">
+                            {a.image && (
+                              <Image
+                                src={a.image}
+                                alt={a.name}
+                                fill
+                                sizes="40px"
+                                className="object-cover"
+                              />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-foreground truncate group-hover:text-accent transition-colors">
+                              {a.name}
+                            </p>
+                            <p className="text-[11px] text-foreground-subtle truncate">
+                              {a.role}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-foreground truncate group-hover:text-accent transition-colors">
-                            {a.name}
-                          </p>
-                          <p className="text-[10px] text-foreground-subtle truncate">
-                            {a.role || 'Speaker'}
-                          </p>
-                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-foreground-subtle group-hover:text-accent ml-2" />
                       </Link>
                     ))}
                   </div>

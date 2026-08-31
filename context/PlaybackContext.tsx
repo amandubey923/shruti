@@ -100,14 +100,33 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       setPlaybackRate(s);
     }
 
+    const updateRealDuration = () => {
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration);
+        setCurrentTrack((prev) => {
+          if (prev && (!prev.duration || Math.abs(prev.duration - audio.duration) > 2)) {
+            return { ...prev, duration: Math.round(audio.duration) };
+          }
+          return prev;
+        });
+      }
+    };
+
     const handleLoadedMetadata = () => {
-      setDuration(audio.duration || currentTrack?.duration || 0);
+      updateRealDuration();
       setIsLoading(false);
       setError(null);
     };
 
+    const handleDurationChange = () => {
+      updateRealDuration();
+    };
+
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
+      if (duration === 0 && audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+        updateRealDuration();
+      }
       const now = Date.now();
       if (now - lastSaveTimeRef.current > 10000 && currentTrack) {
         lastSaveTimeRef.current = now;
@@ -120,6 +139,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       setIsPlaying(true);
       setError(null);
+      updateRealDuration();
     };
     const handlePause = () => {
       setIsPlaying(false);
@@ -135,6 +155,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     };
 
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('waiting', handleWaiting);
     audio.addEventListener('playing', handlePlaying);
@@ -143,6 +164,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
     return () => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('durationchange', handleDurationChange);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('waiting', handleWaiting);
       audio.removeEventListener('playing', handlePlaying);
@@ -198,161 +220,86 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
       if (!isSameTrack) {
         setCurrentTrack(track);
-        audio.src = getSupabaseAudioUrl(track.audioUrl);
-        audio.load();
+        setDuration(track.duration || 0);
 
-        const idx = queue.findIndex((item) => item.id === track.id);
-        if (idx !== -1) {
-          setQueueIndex(idx);
+        const src = getSupabaseAudioUrl(track.audioUrl);
+        audio.src = src;
+        audio.playbackRate = playbackRate;
+
+        // Restore resume position if available
+        let resumePos = 0;
+        if (initialPosition !== undefined) {
+          resumePos = initialPosition;
         } else {
-          setQueue([track]);
-          setQueueIndex(0);
-        }
-      }
-
-      let seekPos = initialPosition;
-      if (seekPos === undefined && !isSameTrack) {
-        try {
-          const raw = localStorage.getItem(LOCAL_PROGRESS_KEY);
-          if (raw) {
-            const map = JSON.parse(raw);
-            if (map[track.id] && !map[track.id].completed) {
-              seekPos = map[track.id].lastPosition;
+          try {
+            const raw = localStorage.getItem(LOCAL_PROGRESS_KEY);
+            if (raw) {
+              const map = JSON.parse(raw);
+              if (map[track.id] && !map[track.id].completed) {
+                resumePos = map[track.id].lastPosition || 0;
+              }
             }
+          } catch {
+            // ignore storage error
           }
-        } catch {
-          seekPos = 0;
         }
-      }
 
-      const onCanPlay = () => {
-        if (seekPos && seekPos > 0 && seekPos < audio.duration) {
-          audio.currentTime = seekPos;
-        }
-        audio
-          .play()
-          .then(() => setIsPlaying(true))
-          .catch((err) => {
-            console.warn('Audio play request failed:', err);
+        const handleCanPlay = () => {
+          if (resumePos > 0 && resumePos < (audio.duration || track.duration)) {
+            audio.currentTime = resumePos;
+            setCurrentTime(resumePos);
+          } else {
+            setCurrentTime(0);
+          }
+
+          audio.play().catch(() => {
             setIsPlaying(false);
+            setIsLoading(false);
           });
-        audio.removeEventListener('canplay', onCanPlay);
-      };
+        };
 
-      audio.addEventListener('canplay', onCanPlay);
-
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: track.title,
-          artist: track.artistName || 'SHRUTI',
-          album: track.seriesName || track.albumName || 'SHRUTI Archive',
-          artwork: [
-            {
-              src: resolveTrackCover(track),
-              sizes: '512x512',
-              type: 'image/webp',
-            },
-          ],
+        audio.addEventListener('canplay', handleCanPlay, { once: true });
+        audio.load();
+      } else {
+        audio.play().catch(() => {
+          setIsPlaying(false);
+          setIsLoading(false);
         });
       }
     },
-    [currentTrack, queue]
+    [currentTrack?.id, playbackRate]
   );
 
   const pauseTrack = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    }
+    audioRef.current?.pause();
   }, []);
 
   const resumeTrack = useCallback(() => {
     if (audioRef.current && currentTrack) {
-      audioRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch((e) => console.warn('Audio resume error:', e));
+      audioRef.current.play().catch(() => setIsPlaying(false));
     }
   }, [currentTrack]);
 
   const togglePlay = useCallback(() => {
+    if (!audioRef.current || !currentTrack) return;
     if (isPlaying) {
       pauseTrack();
     } else {
-      if (currentTrack) {
-        resumeTrack();
-      }
+      resumeTrack();
     }
   }, [isPlaying, currentTrack, pauseTrack, resumeTrack]);
 
   const seek = useCallback((seconds: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(0, Math.min(seconds, audioRef.current.duration || 0));
-      setCurrentTime(audioRef.current.currentTime);
-    }
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = Math.max(0, Math.min(seconds, audioRef.current.duration || Infinity));
+    setCurrentTime(audioRef.current.currentTime);
   }, []);
 
   const skipTime = useCallback((seconds: number) => {
-    if (audioRef.current) {
-      seek(audioRef.current.currentTime + seconds);
-    }
+    if (!audioRef.current) return;
+    const newTime = audioRef.current.currentTime + seconds;
+    seek(newTime);
   }, [seek]);
-
-  const playNext = useCallback(() => {
-    if (queue.length === 0) return;
-
-    let nextIdx = queueIndex + 1;
-    if (nextIdx >= queue.length) {
-      if (repeatMode === 'all') {
-        nextIdx = 0;
-      } else {
-        pauseTrack();
-        return;
-      }
-    }
-    const nextTrack = queue[nextIdx];
-    if (nextTrack) {
-      setQueueIndex(nextIdx);
-      playTrack(nextTrack, 0);
-    }
-  }, [queue, queueIndex, repeatMode, pauseTrack, playTrack]);
-
-  const playPrevious = useCallback(() => {
-    if (audioRef.current && audioRef.current.currentTime > 5) {
-      seek(0);
-      return;
-    }
-    if (queue.length === 0) return;
-    let prevIdx = queueIndex - 1;
-    if (prevIdx < 0) {
-      prevIdx = queue.length - 1;
-    }
-    const prevTrack = queue[prevIdx];
-    if (prevTrack) {
-      setQueueIndex(prevIdx);
-      playTrack(prevTrack, 0);
-    }
-  }, [queue, queueIndex, seek, playTrack]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleEnded = () => {
-      if (currentTrack) {
-        saveProgress(currentTrack, audio.duration, audio.duration);
-      }
-      if (repeatMode === 'one') {
-        audio.currentTime = 0;
-        audio.play().catch(console.warn);
-      } else {
-        playNext();
-      }
-    };
-
-    audio.addEventListener('ended', handleEnded);
-    return () => audio.removeEventListener('ended', handleEnded);
-  }, [currentTrack, repeatMode, playNext, saveProgress]);
 
   const setVolume = useCallback((vol: number) => {
     const clamped = Math.max(0, Math.min(1, vol));
@@ -360,21 +307,18 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     if (audioRef.current) {
       audioRef.current.volume = clamped;
     }
+    if (clamped > 0) setIsMuted(false);
     localStorage.setItem('shruti_volume', clamped.toString());
-    if (clamped > 0 && isMuted) {
-      setIsMuted(false);
-    }
-  }, [isMuted]);
+  }, []);
 
   const toggleMute = useCallback(() => {
-    if (audioRef.current) {
-      if (isMuted) {
-        audioRef.current.volume = volume;
-        setIsMuted(false);
-      } else {
-        audioRef.current.volume = 0;
-        setIsMuted(true);
-      }
+    if (!audioRef.current) return;
+    if (isMuted) {
+      audioRef.current.volume = volume;
+      setIsMuted(false);
+    } else {
+      audioRef.current.volume = 0;
+      setIsMuted(true);
     }
   }, [isMuted, volume]);
 
@@ -387,12 +331,64 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleRepeat = useCallback(() => {
-    setRepeatMode((prev) => (prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off'));
+    setRepeatMode((prev) => {
+      if (prev === 'off') return 'all';
+      if (prev === 'all') return 'one';
+      return 'off';
+    });
   }, []);
 
   const toggleShuffle = useCallback(() => {
     setIsShuffled((prev) => !prev);
   }, []);
+
+  const playNext = useCallback(() => {
+    if (queue.length === 0) return;
+    if (queueIndex < queue.length - 1) {
+      const nextIdx = queueIndex + 1;
+      setQueueIndex(nextIdx);
+      playTrack(queue[nextIdx], 0);
+    } else if (repeatMode === 'all') {
+      setQueueIndex(0);
+      playTrack(queue[0], 0);
+    }
+  }, [queue, queueIndex, repeatMode, playTrack]);
+
+  const playPrevious = useCallback(() => {
+    if (!audioRef.current) return;
+    if (audioRef.current.currentTime > 3) {
+      seek(0);
+      return;
+    }
+    if (queue.length > 0 && queueIndex > 0) {
+      const prevIdx = queueIndex - 1;
+      setQueueIndex(prevIdx);
+      playTrack(queue[prevIdx], 0);
+    }
+  }, [queue, queueIndex, seek, playTrack]);
+
+  // Handle Track Completion
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      if (currentTrack) {
+        saveProgress(currentTrack, audio.duration || currentTrack.duration, audio.duration || currentTrack.duration);
+      }
+
+      if (repeatMode === 'one') {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+        return;
+      }
+
+      playNext();
+    };
+
+    audio.addEventListener('ended', handleEnded);
+    return () => audio.removeEventListener('ended', handleEnded);
+  }, [currentTrack, repeatMode, playNext, saveProgress]);
 
   const addToQueue = useCallback((track: AudioTrack) => {
     setQueue((prev) => [...prev, track]);
@@ -408,20 +404,16 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
   const removeFromQueue = useCallback((index: number) => {
     setQueue((prev) => prev.filter((_, i) => i !== index));
+    setQueueIndex((prev) => (index < prev ? prev - 1 : prev));
   }, []);
 
   const clearQueue = useCallback(() => {
-    if (currentTrack) {
-      setQueue([currentTrack]);
-      setQueueIndex(0);
-    } else {
-      setQueue([]);
-      setQueueIndex(-1);
-    }
-  }, [currentTrack]);
+    setQueue([]);
+    setQueueIndex(-1);
+  }, []);
 
   const playSeriesAll = useCallback(
-    (tracks: AudioTrack[], startIndex: number = 0) => {
+    (tracks: AudioTrack[], startIndex = 0) => {
       if (!tracks.length) return;
       setQueue(tracks);
       setQueueIndex(startIndex);
@@ -429,60 +421,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     },
     [playTrack]
   );
-
-  // Global Keyboard Shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const activeElement = document.activeElement;
-      const isInput =
-        activeElement?.tagName === 'INPUT' ||
-        activeElement?.tagName === 'TEXTAREA' ||
-        activeElement?.getAttribute('contenteditable') === 'true';
-
-      if (isInput) return;
-
-      switch (e.code) {
-        case 'Space':
-          e.preventDefault();
-          togglePlay();
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          skipTime(-15);
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          skipTime(30);
-          break;
-        case 'KeyM':
-          e.preventDefault();
-          toggleMute();
-          break;
-        case 'KeyN':
-          e.preventDefault();
-          playNext();
-          break;
-        case 'KeyP':
-          e.preventDefault();
-          playPrevious();
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [togglePlay, skipTime, toggleMute, playNext, playPrevious]);
-
-  useEffect(() => {
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.setActionHandler('play', () => resumeTrack());
-      navigator.mediaSession.setActionHandler('pause', () => pauseTrack());
-      navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious());
-      navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
-      navigator.mediaSession.setActionHandler('seekbackward', () => skipTime(-15));
-      navigator.mediaSession.setActionHandler('seekforward', () => skipTime(30));
-    }
-  }, [resumeTrack, pauseTrack, playPrevious, playNext, skipTime]);
 
   return (
     <PlaybackContext.Provider

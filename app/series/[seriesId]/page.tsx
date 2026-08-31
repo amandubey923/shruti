@@ -160,7 +160,7 @@ export default function SeriesDetailPage() {
               >
                 {series.artistName}
               </Link>{' '}
-              • {tracks.length} Parts • {formatDurationHuman(series.totalDuration)}
+              • {tracks.length} Parts • {formatDurationHuman(tracks.reduce((acc, t) => acc + (t.duration || 0), 0) || series.totalDuration)}
             </p>
           </div>
 

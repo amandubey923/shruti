@@ -1,0 +1,50 @@
+Whenever I upload new audio files to Supabase Storage, automatically ingest them into SHRUTI.
+
+Rules:
+
+1. Scan the newly added audio files only.
+2. Detect their folder/series from the Storage path.
+3. If files belong to an existing series:
+   - automatically associate them with that series
+   - determine part number from filename/metadata where possible
+   - preserve the existing series cover
+   - do not create a new cover
+4. If a new series/folder is detected:
+   - create the series metadata structure
+   - do not invent factual information
+   - do not generate artwork automatically
+   - use a stable placeholder until I assign the final cover
+5. For standalone files inside `singles/`:
+   - treat each file as standalone audio
+   - do not create a fake series
+6. Automatically resolve the correct Supabase Storage URL.
+7. Automatically read the REAL audio duration from the actual MP3 metadata/browser audio metadata.
+8. Never use hardcoded or estimated durations.
+9. Detect duplicate files and duplicate IDs.
+10. Detect broken/missing paths.
+11. Preserve existing filenames and Storage structure.
+12. Never rename, move, or delete uploaded audio automatically.
+13. Update only the required catalog metadata.
+14. Keep existing playback, Firebase Auth, Firestore, Supabase, player, favorites, history, and resume functionality intact.
+15. Do not generate random images.
+16. Do not use random external image URLs.
+17. Never create dummy content.
+18. After ingestion run:
+    - typecheck
+    - lint
+    - build
+19. Report:
+    - newly detected files
+    - series detected
+    - part numbers
+    - real durations
+    - missing/broken files
+    - duplicates
+    - metadata updated
+    - validation result
+
+IMPORTANT:
+Do not modify unrelated code.
+Do not redesign the UI.
+Do not add features.
+Only perform safe audio ingestion and metadata synchronization.

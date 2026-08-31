@@ -14,20 +14,20 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary:
-        'bg-accent text-background hover:bg-accent-hover text-black font-semibold shadow-sm hover:shadow-md hover:shadow-accent/20',
+        'bg-accent text-stone-950 dark:text-stone-950 hover:bg-accent-hover font-bold shadow-sm hover:shadow-md hover:shadow-accent/20',
       secondary:
-        'bg-background-elevated text-foreground hover:bg-background-hover hover:text-white border border-background-border',
+        'bg-background-elevated text-foreground hover:bg-background-hover border border-background-border font-medium',
       outline:
-        'border border-background-border text-foreground hover:border-foreground-muted/40 hover:bg-background-elevated',
+        'border border-background-border text-foreground hover:border-accent/40 hover:bg-background-elevated',
       ghost:
         'text-foreground-muted hover:text-foreground hover:bg-background-hover/60',
       danger:
-        'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20',
+        'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20',
     };
 
     const sizes = {
       sm: 'text-xs px-3 py-1.5 gap-1.5',
-      md: 'text-sm px-4 py-2 gap-2',
+      md: 'text-sm px-4.5 py-2 gap-2',
       lg: 'text-base px-6 py-2.5 gap-2.5',
       icon: 'p-2.5 w-10 h-10 rounded-full',
     };

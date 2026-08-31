@@ -55,6 +55,7 @@ export interface Series {
   tags?: string[];
   featured?: boolean;
   published: boolean;
+  releaseDate?: string;
   createdAt?: string;
   updatedAt?: string;
 }

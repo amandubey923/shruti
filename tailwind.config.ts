@@ -11,24 +11,24 @@ const config: Config = {
     extend: {
       colors: {
         background: {
-          DEFAULT: '#0A0A0C',
-          surface: '#121215',
-          elevated: '#1A1A1F',
-          card: '#16161A',
-          hover: '#222228',
-          border: '#26262E',
+          DEFAULT: 'var(--bg-base)',
+          surface: 'var(--bg-surface)',
+          elevated: 'var(--bg-elevated)',
+          card: 'var(--bg-card)',
+          hover: 'var(--bg-hover)',
+          border: 'var(--bg-border)',
         },
         foreground: {
-          DEFAULT: '#F5F2EB',
-          muted: '#A39E93',
-          subtle: '#6E6A62',
+          DEFAULT: 'var(--text-main)',
+          muted: 'var(--text-muted)',
+          subtle: 'var(--text-subtle)',
         },
         accent: {
-          DEFAULT: '#D97706',
-          hover: '#F59E0B',
-          light: '#FDE68A',
-          subtle: '#2E1E09',
-          glow: 'rgba(217, 119, 6, 0.15)',
+          DEFAULT: 'var(--accent-main)',
+          hover: 'var(--accent-hover)',
+          light: 'var(--accent-light)',
+          subtle: 'var(--accent-subtle)',
+          glow: 'var(--accent-glow)',
         },
       },
       fontFamily: {
@@ -37,8 +37,8 @@ const config: Config = {
       },
       animation: {
         'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'fade-in': 'fadeIn 0.25s ease-out',
-        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in': 'fadeIn 0.2s ease-out',
+        'slide-up': 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
       },
       keyframes: {
         fadeIn: {
@@ -46,7 +46,7 @@ const config: Config = {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '0%': { transform: 'translateY(8px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
       },
