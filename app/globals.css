@@ -43,12 +43,19 @@
     --accent-glow: rgba(217, 119, 6, 0.15);
   }
 
+  html {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   body {
     background-color: var(--bg-base);
     color: var(--text-main);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    width: 100%;
+    max-width: 100vw;
     overflow-x: hidden;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
