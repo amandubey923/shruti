@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Public catalog content (Read-only for public, admin write)
+    match /audio/{audioId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /series/{seriesId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /artists/{artistId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // User Private Subcollections
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /favorites/{audioId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /history/{audioId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /savedSeries/{seriesId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /playlists/{playlistId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        match /items/{audioId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+    }
+  }
+}
+
