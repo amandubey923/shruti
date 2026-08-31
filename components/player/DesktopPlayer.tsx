@@ -94,21 +94,21 @@ export function DesktopPlayer() {
 
   return (
     <>
-      <div className="hidden lg:block fixed bottom-0 left-0 right-0 z-40 bg-background-surface/95 backdrop-blur-md border-t border-background-border/70 px-6 py-3 shadow-2xl transition-all">
+      <div className="hidden lg:block fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t border-background-border px-6 py-3.5 shadow-2xl transition-all">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
           {/* Left: Track Details */}
-          <div className="flex items-center gap-3.5 w-1/4 min-w-[220px]">
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background-elevated border border-background-border/60 group">
+          <div className="flex items-center gap-3.5 w-1/4 min-w-[240px]">
+            <div className="relative w-13 h-13 rounded-2xl overflow-hidden flex-shrink-0 bg-background-elevated border border-background-border shadow-sm group">
               {coverUrl ? (
                 <Image
                   src={coverUrl}
                   alt={currentTrack.title}
                   fill
-                  sizes="48px"
+                  sizes="52px"
                   className="object-cover transition-transform group-hover:scale-105"
                 />
               ) : (
-                <div className="w-full h-full bg-accent/20 flex items-center justify-center text-accent font-serif">
+                <div className="w-full h-full bg-accent/20 flex items-center justify-center text-accent font-serif font-bold">
                   S
                 </div>
               )}
@@ -117,21 +117,22 @@ export function DesktopPlayer() {
             <div className="min-w-0 flex-1">
               <Link
                 href={`/track/${currentTrack.slug || currentTrack.id}`}
-                className="text-xs font-semibold text-foreground hover:text-accent transition-colors truncate block"
+                className="text-xs sm:text-sm font-bold text-foreground hover:text-accent transition-colors truncate block"
               >
                 {currentTrack.title}
               </Link>
-              <p className="text-[11px] text-foreground-subtle truncate">
+              <p className="text-[11px] font-medium text-foreground-subtle truncate mt-0.5">
                 {currentTrack.artistName || currentTrack.seriesName || 'SHRUTI Archive'}
               </p>
             </div>
 
             <button
+              type="button"
               onClick={() => toggleFavorite(currentTrack.id)}
-              className={`p-1.5 rounded-full transition-colors ${
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
                 isFav
-                  ? 'text-red-400 hover:text-red-300'
-                  : 'text-foreground-subtle hover:text-foreground hover:bg-background-hover'
+                  ? 'text-red-500 bg-red-500/10'
+                  : 'text-foreground-subtle hover:text-foreground hover:bg-background-elevated'
               }`}
               aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
             >
@@ -141,41 +142,50 @@ export function DesktopPlayer() {
 
           {/* Center: Controls & Scrubber */}
           <div className="flex flex-col items-center flex-1 max-w-2xl px-4">
-            <div className="flex items-center gap-4 mb-1.5">
+            <div className="flex items-center gap-3 sm:gap-4 mb-2">
               <button
+                type="button"
                 onClick={toggleShuffle}
-                className={`p-1.5 rounded-full transition-colors ${
-                  isShuffled ? 'text-accent' : 'text-foreground-subtle hover:text-foreground'
+                className={`p-2 rounded-full transition-colors ${
+                  isShuffled ? 'text-accent bg-accent/15' : 'text-foreground-subtle hover:text-foreground'
                 }`}
                 title={isShuffled ? 'Shuffle Enabled' : 'Shuffle Disabled'}
+                aria-label="Toggle Shuffle"
               >
-                <Shuffle className="w-3.5 h-3.5" />
+                <Shuffle className="w-4 h-4" />
               </button>
 
               <button
+                type="button"
                 onClick={playPrevious}
-                className="p-1.5 text-foreground-muted hover:text-foreground transition-colors"
-                title="Previous Track (P)"
+                className="p-2 text-foreground-muted hover:text-foreground transition-colors active:scale-90"
+                title="Previous Track"
+                aria-label="Previous Track"
               >
                 <SkipBack className="w-4 h-4" />
               </button>
 
               <button
+                type="button"
                 onClick={() => skipTime(-15)}
-                className="p-1.5 text-foreground-subtle hover:text-foreground transition-colors"
-                title="Skip back 15s (←)"
+                className="p-2 text-foreground-muted hover:text-foreground transition-colors active:scale-90"
+                title="Skip back 15s"
+                aria-label="Skip back 15s"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
 
+              {/* Dominant Primary Play/Pause Button */}
               <button
+                type="button"
                 onClick={togglePlay}
                 disabled={isLoading}
-                className="w-10 h-10 rounded-full bg-accent hover:bg-accent-hover text-background flex items-center justify-center transition-all transform active:scale-95 shadow-md shadow-accent/20"
-                title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+                className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-stone-950 flex items-center justify-center transition-all transform active:scale-95 shadow-lg shadow-accent/25"
+                title={isPlaying ? 'Pause' : 'Play'}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
               >
                 {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
                 ) : isPlaying ? (
                   <Pause className="w-5 h-5 fill-current" />
                 ) : (
@@ -184,29 +194,35 @@ export function DesktopPlayer() {
               </button>
 
               <button
+                type="button"
                 onClick={() => skipTime(30)}
-                className="p-1.5 text-foreground-subtle hover:text-foreground transition-colors"
-                title="Skip forward 30s (→)"
+                className="p-2 text-foreground-muted hover:text-foreground transition-colors active:scale-90"
+                title="Skip forward 30s"
+                aria-label="Skip forward 30s"
               >
                 <RotateCw className="w-4 h-4" />
               </button>
 
               <button
+                type="button"
                 onClick={playNext}
-                className="p-1.5 text-foreground-muted hover:text-foreground transition-colors"
-                title="Next Track (N)"
+                className="p-2 text-foreground-muted hover:text-foreground transition-colors active:scale-90"
+                title="Next Track"
+                aria-label="Next Track"
               >
                 <SkipForward className="w-4 h-4" />
               </button>
 
               <button
+                type="button"
                 onClick={toggleRepeat}
-                className={`p-1.5 rounded-full transition-colors ${
-                  repeatMode !== 'off' ? 'text-accent' : 'text-foreground-subtle hover:text-foreground'
+                className={`p-2 rounded-full transition-colors ${
+                  repeatMode !== 'off' ? 'text-accent bg-accent/15' : 'text-foreground-subtle hover:text-foreground'
                 }`}
                 title={`Repeat: ${repeatMode}`}
+                aria-label={`Repeat mode: ${repeatMode}`}
               >
-                {repeatMode === 'one' ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-3.5 h-3.5" />}
+                {repeatMode === 'one' ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-4 h-4" />}
               </button>
             </div>
 
@@ -219,40 +235,46 @@ export function DesktopPlayer() {
           </div>
 
           {/* Right: Actions, Speed, Queue & Volume */}
-          <div className="flex items-center justify-end gap-3 w-1/4 min-w-[220px]">
+          <div className="flex items-center justify-end gap-2.5 w-1/4 min-w-[240px]">
             <SpeedSelector
               currentSpeed={playbackRate}
               onSpeedChange={setSpeed}
             />
 
             <button
+              type="button"
               onClick={() => setShowQueue(!showQueue)}
-              className={`p-1.5 rounded-lg transition-colors ${
-                showQueue ? 'bg-accent/15 text-accent' : 'text-foreground-muted hover:text-foreground hover:bg-background-hover'
+              className={`p-2 rounded-xl transition-colors ${
+                showQueue ? 'bg-accent/20 text-accent font-bold' : 'text-foreground-muted hover:text-foreground hover:bg-background-elevated'
               }`}
               title="Queue"
+              aria-label="Playback Queue"
             >
               <ListMusic className="w-4 h-4" />
             </button>
 
             {currentTrack.isDownloadable && (
               <button
+                type="button"
                 onClick={handleDownload}
-                className="p-1.5 text-foreground-muted hover:text-foreground hover:bg-background-hover rounded-lg transition-colors"
+                className="p-2 text-foreground-muted hover:text-foreground hover:bg-background-elevated rounded-xl transition-colors"
                 title="Download Track"
+                aria-label="Download Track"
               >
                 <Download className="w-4 h-4" />
               </button>
             )}
 
             <button
+              type="button"
               onClick={handleShare}
-              className="p-1.5 text-foreground-muted hover:text-foreground hover:bg-background-hover rounded-lg transition-colors relative"
+              className="p-2 text-foreground-muted hover:text-foreground hover:bg-background-elevated rounded-xl transition-colors relative"
               title="Share Track"
+              aria-label="Share Track"
             >
               <Share2 className="w-4 h-4" />
               {copied && (
-                <span className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-accent text-background rounded text-[10px] font-semibold whitespace-nowrap shadow">
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-accent text-stone-950 rounded-md text-[10px] font-bold whitespace-nowrap shadow-lg">
                   Copied!
                 </span>
               )}
@@ -266,11 +288,13 @@ export function DesktopPlayer() {
             />
 
             <button
+              type="button"
               onClick={() => setIsExpandedPlayer(true)}
-              className="p-1.5 text-foreground-subtle hover:text-foreground hover:bg-background-hover rounded-lg transition-colors"
+              className="p-2 text-foreground-subtle hover:text-foreground hover:bg-background-elevated rounded-xl transition-colors"
               title="Expand Immersive View"
+              aria-label="Expand Immersive View"
             >
-              <Maximize2 className="w-3.5 h-3.5" />
+              <Maximize2 className="w-4 h-4" />
             </button>
           </div>
         </div>

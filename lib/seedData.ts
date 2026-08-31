@@ -177,16 +177,140 @@ const nirvanTracks: AudioTrack[] = Array.from({ length: 4 }, (_, i) => {
   };
 });
 
-// COMPLETE COMBINED TRACKS CATALOG (64 Verified MP3 Files)
+// 6. OSHO - ADHYATAM UPANISHAD (3 Verified Parts in Storage)
+const adhyatamDurations = [5299, 4431, 5194];
+
+const adhyatamTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
+  const p = (i + 1).toString().padStart(2, '0');
+  const dur = adhyatamDurations[i];
+  return {
+    id: `adhyatam-upanishad-${p}`,
+    title: `Adhyatam Upanishad - Part ${p}`,
+    subtitle: `Discourse ${i + 1}`,
+    slug: `adhyatam-upanishad-${p}`,
+    artistId: 'osho',
+    artistName: 'Osho',
+    seriesId: 'adhyatam-upanishad',
+    seriesName: 'Adhyatam Upanishad',
+    trackNumber: i + 1,
+    duration: dur,
+    audioUrl: `osho/OSHO-Adhyatam_Upanishad/OSHO-Adhyatam_Upanishad_${p}.mp3`,
+    coverImage: '/covers/adhyatam-upanishad.svg',
+    category: 'Upanishads',
+    tags: ['Upanishads', 'Vedanta', 'Inner Inquiry', 'Hindi'],
+    description: `Commentary on the Adhyatam Upanishad by Osho - Part ${p}.`,
+    isDownloadable: true,
+    published: true,
+    releaseDate: '1973-12-01',
+    language: 'Hindi',
+    playCount: 590 - i * 15,
+  };
+});
+
+// 7. OSHO - ASAMBHAV KRANTI (10 Verified Parts in Storage)
+const asambhavDurations = [2853, 3429, 2673, 3460, 3422, 2548, 2831, 4040, 3235, 3428];
+
+const asambhavTracks: AudioTrack[] = Array.from({ length: 10 }, (_, i) => {
+  const p = (i + 1).toString().padStart(2, '0');
+  const dur = asambhavDurations[i];
+  return {
+    id: `asambhav-kranti-${p}`,
+    title: `Asambhav Kranti - Part ${p}`,
+    subtitle: `Discourse ${i + 1}`,
+    slug: `asambhav-kranti-${p}`,
+    artistId: 'osho',
+    artistName: 'Osho',
+    seriesId: 'asambhav-kranti',
+    seriesName: 'Asambhav Kranti',
+    trackNumber: i + 1,
+    duration: dur,
+    audioUrl: `osho/OSHO-Asambhav_Kranti/OSHO-Asambhav_Kranti_${p}.mp3`,
+    coverImage: '/covers/asambhav-kranti.svg',
+    category: 'Discourses',
+    tags: ['Revolution', 'Transformation', 'Discourses', 'Hindi'],
+    description: `The revolutionary awakening of human consciousness by Osho - Part ${p}.`,
+    isDownloadable: true,
+    published: true,
+    releaseDate: '1971-08-01',
+    language: 'Hindi',
+    playCount: 680 - i * 12,
+  };
+});
+
+// 8. OSHO - ISHAVASHYA UPANISHAD (3 Verified Parts in Storage)
+const ishavashyaDurations = [3486, 2337, 3396];
+
+const ishavashyaTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
+  const p = (i + 1).toString().padStart(2, '0');
+  const dur = ishavashyaDurations[i];
+  return {
+    id: `ishavashya-upanishad-${p}`,
+    title: `Ishavashya Upanishad - Part ${p}`,
+    subtitle: `Discourse ${i + 1}`,
+    slug: `ishavashya-upanishad-${p}`,
+    artistId: 'osho',
+    artistName: 'Osho',
+    seriesId: 'ishavashya-upanishad',
+    seriesName: 'Ishavashya Upanishad',
+    trackNumber: i + 1,
+    duration: dur,
+    audioUrl: `osho/OSHO-Ishavashya_Upanishad/OSHO-Ishavashya_Upanishad_${p}.mp3`,
+    coverImage: '/covers/ishavashya-upanishad.svg',
+    category: 'Upanishads',
+    tags: ['Upanishads', 'Isha', 'Vedanta', 'Divine Wholeness', 'Hindi'],
+    description: `Commentary on the sacred Ishavashya Upanishad by Osho - Part ${p}.`,
+    isDownloadable: true,
+    published: true,
+    releaseDate: '1971-04-01',
+    language: 'Hindi',
+    playCount: 620 - i * 15,
+  };
+});
+
+// 9. OSHO - KAIVALYA UPANISHAD (3 Verified Parts in Storage)
+const kaivalyaDurations = [4263, 4661, 5930];
+
+const kaivalyaTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
+  const p = (i + 1).toString().padStart(2, '0');
+  const dur = kaivalyaDurations[i];
+  return {
+    id: `kaivalya-upanishad-${p}`,
+    title: `Kaivalya Upanishad - Part ${p}`,
+    subtitle: `Discourse ${i + 1}`,
+    slug: `kaivalya-upanishad-${p}`,
+    artistId: 'osho',
+    artistName: 'Osho',
+    seriesId: 'kaivalya-upanishad',
+    seriesName: 'Kaivalya Upanishad',
+    trackNumber: i + 1,
+    duration: dur,
+    audioUrl: `osho/OSHO-Kaivalya_Upanishad/OSHO-Kaivalya_Upanishad_${p}.mp3`,
+    coverImage: '/covers/kaivalya-upanishad.svg',
+    category: 'Upanishads',
+    tags: ['Upanishads', 'Kaivalya', 'Aloneness', 'Liberation', 'Hindi'],
+    description: `Commentary on the Kaivalya Upanishad on absolute spiritual aloneness and liberation by Osho - Part ${p}.`,
+    isDownloadable: true,
+    published: true,
+    releaseDate: '1972-06-01',
+    language: 'Hindi',
+    playCount: 640 - i * 15,
+  };
+});
+
+// COMPLETE COMBINED TRACKS CATALOG (83 Verified MP3 Files)
 export const SEED_TRACKS: AudioTrack[] = [
   ...krishnaTracks,
   ...ekOmkarTracks,
   ...mahaveerTracks,
   ...mareHeJogiTracks,
   ...nirvanTracks,
+  ...adhyatamTracks,
+  ...asambhavTracks,
+  ...ishavashyaTracks,
+  ...kaivalyaTracks,
 ];
 
-// CANONICAL SERIES DEFINITIONS
+// CANONICAL SERIES DEFINITIONS (9 Verified Series in Storage)
 export const SEED_SERIES: Series[] = [
   {
     id: 'krishna-smriti',
@@ -279,6 +403,78 @@ export const SEED_SERIES: Series[] = [
     releaseDate: '1973-11-01',
     published: true,
   },
+  {
+    id: 'adhyatam-upanishad',
+    title: 'Adhyatam Upanishad',
+    subtitle: '3 Discourse Recordings',
+    slug: 'adhyatam-upanishad',
+    artistId: 'osho',
+    artistName: 'Osho',
+    description:
+      'Profound commentary on the Adhyatam Upanishad, exploring the inner spiritual dimension of self-inquiry and the dissolution of duality.',
+    coverImage: '/covers/adhyatam-upanishad.svg',
+    totalTracks: 3,
+    totalDuration: adhyatamDurations.reduce((acc, cur) => acc + cur, 0), // 14,924s (~4h 08m)
+    trackIds: adhyatamTracks.map((t) => t.id),
+    category: 'Upanishads',
+    tags: ['Upanishads', 'Vedanta', 'Inner Inquiry', 'Hindi'],
+    releaseDate: '1973-12-01',
+    published: true,
+  },
+  {
+    id: 'asambhav-kranti',
+    title: 'Asambhav Kranti',
+    subtitle: '10 Discourse Recordings',
+    slug: 'asambhav-kranti',
+    artistId: 'osho',
+    artistName: 'Osho',
+    description:
+      'The impossible revolution: discourses on breaking conditioned thought patterns and bringing about a radical mutation in human consciousness.',
+    coverImage: '/covers/asambhav-kranti.svg',
+    totalTracks: 10,
+    totalDuration: asambhavDurations.reduce((acc, cur) => acc + cur, 0), // 31,919s (~8h 51m)
+    trackIds: asambhavTracks.map((t) => t.id),
+    category: 'Discourses',
+    tags: ['Revolution', 'Transformation', 'Discourses', 'Hindi'],
+    releaseDate: '1971-08-01',
+    published: true,
+  },
+  {
+    id: 'ishavashya-upanishad',
+    title: 'Ishavashya Upanishad',
+    subtitle: '3 Discourse Recordings',
+    slug: 'ishavashya-upanishad',
+    artistId: 'osho',
+    artistName: 'Osho',
+    description:
+      'Commentaries on the opening jewel of the Upanishads — Ishavashya: the realization that the entire cosmos is permeated with the sacred divine whole.',
+    coverImage: '/covers/ishavashya-upanishad.svg',
+    totalTracks: 3,
+    totalDuration: ishavashyaDurations.reduce((acc, cur) => acc + cur, 0), // 9,219s (~2h 33m)
+    trackIds: ishavashyaTracks.map((t) => t.id),
+    category: 'Upanishads',
+    tags: ['Upanishads', 'Isha', 'Vedanta', 'Divine Wholeness', 'Hindi'],
+    releaseDate: '1971-04-01',
+    published: true,
+  },
+  {
+    id: 'kaivalya-upanishad',
+    title: 'Kaivalya Upanishad',
+    subtitle: '3 Discourse Recordings',
+    slug: 'kaivalya-upanishad',
+    artistId: 'osho',
+    artistName: 'Osho',
+    description:
+      'A deep exposition of Kaivalya — the supreme state of spiritual aloneness, transcendence of worldly bondage, and merging into pure existence.',
+    coverImage: '/covers/kaivalya-upanishad.svg',
+    totalTracks: 3,
+    totalDuration: kaivalyaDurations.reduce((acc, cur) => acc + cur, 0), // 14,854s (~4h 07m)
+    trackIds: kaivalyaTracks.map((t) => t.id),
+    category: 'Upanishads',
+    tags: ['Upanishads', 'Kaivalya', 'Aloneness', 'Liberation', 'Hindi'],
+    releaseDate: '1972-06-01',
+    published: true,
+  },
 ];
 
 // SPEAKER
@@ -290,8 +486,8 @@ export const SEED_ARTISTS: Artist[] = [
     role: 'Enlightened Mystic & Master',
     bio: 'Osho is an Indian mystic and spiritual teacher whose spoken discourses cover a wide range of Eastern and Western spiritual traditions, Upanishads, Gita, Sufism, Tantra, and Zen.',
     image: '/covers/default-cover.svg',
-    trackCount: 64,
-    seriesCount: 5,
+    trackCount: 83,
+    seriesCount: 9,
     tags: ['Discourses', 'Philosophy', 'Upanishads'],
   },
 ];
@@ -303,7 +499,7 @@ export const SEED_CATEGORIES: CategoryInfo[] = [
     title: 'Discourses',
     description: 'Spoken talks and commentaries on spiritual classics.',
     coverImage: '/covers/krishna-smriti.svg',
-    count: 20,
+    count: 30,
   },
   {
     id: 'philosophy',
@@ -317,6 +513,6 @@ export const SEED_CATEGORIES: CategoryInfo[] = [
     title: 'Upanishads',
     description: 'Commentaries on ancient Vedic wisdom and liberation.',
     coverImage: '/covers/nirvan-upanishad.svg',
-    count: 4,
+    count: 13,
   },
 ];

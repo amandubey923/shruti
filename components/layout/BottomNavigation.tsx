@@ -23,7 +23,7 @@ export function BottomNavigation({ onOpenSearch }: BottomNavigationProps) {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background-surface/90 backdrop-blur-md border-t border-background-border/60 px-4 py-2 flex items-center justify-around"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-lg border-t border-background-border px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-pb"
       aria-label="Mobile Navigation"
     >
       {navItems.map((item) => {
@@ -35,10 +35,11 @@ export function BottomNavigation({ onOpenSearch }: BottomNavigationProps) {
             <button
               key={item.label}
               onClick={item.action}
-              className="flex flex-col items-center gap-1 text-foreground-muted hover:text-foreground active:scale-95 transition-all p-1"
+              className="flex-1 min-h-[48px] flex flex-col items-center justify-center gap-1 text-foreground-muted hover:text-foreground active:scale-90 transition-all rounded-xl"
+              aria-label="Open Search"
             >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <Icon className="w-5 h-5 text-foreground-muted" />
+              <span className="text-[10px] font-semibold tracking-wide">{item.label}</span>
             </button>
           );
         }
@@ -48,12 +49,15 @@ export function BottomNavigation({ onOpenSearch }: BottomNavigationProps) {
             key={item.label}
             href={item.href!}
             className={cn(
-              'flex flex-col items-center gap-1 transition-all p-1',
-              isActive ? 'text-accent font-semibold' : 'text-foreground-muted hover:text-foreground'
+              'flex-1 min-h-[48px] flex flex-col items-center justify-center gap-1 transition-all rounded-xl active:scale-90',
+              isActive
+                ? 'text-accent font-bold'
+                : 'text-foreground-muted hover:text-foreground'
             )}
+            aria-current={isActive ? 'page' : undefined}
           >
-            <Icon className="w-5 h-5" />
-            <span className="text-[10px] font-medium">{item.label}</span>
+            <Icon className={cn('w-5 h-5', isActive ? 'text-accent stroke-[2.5]' : '')} />
+            <span className="text-[10px] font-semibold tracking-wide">{item.label}</span>
           </Link>
         );
       })}

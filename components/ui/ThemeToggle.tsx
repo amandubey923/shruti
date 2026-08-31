@@ -15,8 +15,9 @@ export function ThemeToggle({ className = '', variant = 'segmented' }: ThemeTogg
   if (variant === 'icon') {
     return (
       <button
+        type="button"
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        className={`p-2 rounded-full border border-background-border bg-background-elevated hover:bg-background-hover text-foreground transition-all flex items-center justify-center ${className}`}
+        className={`w-10 h-10 rounded-full border border-background-border bg-background-elevated hover:bg-background-hover text-foreground transition-all flex items-center justify-center active:scale-95 shadow-sm ${className}`}
         aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       >
@@ -33,36 +34,35 @@ export function ThemeToggle({ className = '', variant = 'segmented' }: ThemeTogg
     <div
       role="group"
       aria-label="Color theme selector"
-      className={`inline-flex items-center p-0.5 rounded-full bg-background-elevated border border-background-border text-xs font-medium ${className}`}
+      className={`inline-flex items-center p-1 rounded-full bg-background-elevated border border-background-border text-xs font-medium shadow-inner ${className}`}
     >
       <button
         type="button"
         onClick={() => setTheme('light')}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all duration-200 ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
           theme === 'light'
-            ? 'bg-background text-foreground font-semibold shadow-sm border border-background-border/50'
+            ? 'bg-background text-foreground font-bold shadow-sm border border-background-border/80 ring-1 ring-black/5'
             : 'text-foreground-subtle hover:text-foreground'
         }`}
         aria-pressed={theme === 'light'}
       >
         <Sun className={`w-3.5 h-3.5 ${theme === 'light' ? 'text-accent' : ''}`} />
-        <span className="hidden sm:inline">Light</span>
+        <span>Light</span>
       </button>
 
       <button
         type="button"
         onClick={() => setTheme('dark')}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all duration-200 ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
           theme === 'dark'
-            ? 'bg-background text-foreground font-semibold shadow-sm border border-background-border/50'
+            ? 'bg-background text-foreground font-bold shadow-sm border border-background-border/80 ring-1 ring-white/5'
             : 'text-foreground-subtle hover:text-foreground'
         }`}
         aria-pressed={theme === 'dark'}
       >
         <Moon className={`w-3.5 h-3.5 ${theme === 'dark' ? 'text-accent' : ''}`} />
-        <span className="hidden sm:inline">Dark</span>
+        <span>Dark</span>
       </button>
     </div>
   );
 }
-

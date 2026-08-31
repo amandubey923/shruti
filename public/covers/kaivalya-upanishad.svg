@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
+  <defs>
+    <linearGradient id="bg-kaivalya" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#022C22"/>
+      <stop offset="50%" stop-color="#021A14"/>
+      <stop offset="100%" stop-color="#010D0A"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="800" rx="32" fill="url(#bg-kaivalya)"/>
+  <rect x="24" y="24" width="552" height="752" rx="20" fill="none" stroke="#059669" stroke-width="1.5" stroke-opacity="0.35"/>
+  <rect x="36" y="36" width="528" height="728" rx="14" fill="none" stroke="#059669" stroke-width="1" stroke-opacity="0.2"/>
+  <circle cx="48" cy="48" r="3" fill="#34D399" opacity="0.5"/>
+  <circle cx="552" cy="48" r="3" fill="#34D399" opacity="0.5"/>
+  <circle cx="48" cy="752" r="3" fill="#34D399" opacity="0.5"/>
+  <circle cx="552" cy="752" r="3" fill="#34D399" opacity="0.5"/>
+  
+  <g transform="translate(300, 75)">
+    <rect x="-80" y="-14" width="160" height="28" rx="14" fill="#064E3B" fill-opacity="0.3" stroke="#059669" stroke-width="1" stroke-opacity="0.4"/>
+    <text text-anchor="middle" y="4" fill="#A7F3D0" font-family="sans-serif" font-size="11" font-weight="600" letter-spacing="3">SHRUTI • ARCHIVE</text>
+  </g>
+
+  <g transform="translate(300, 260)">
+    <circle cx="0" cy="0" r="28" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.8"/>
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#34D399" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="0" cy="0" r="3" fill="#34D399"/>
+  </g>
+
+  <text text-anchor="middle" x="300" y="380" fill="#ECFDF5" font-family="serif" font-size="34" font-weight="bold" letter-spacing="1">कैवल्य उपनिषद</text>
+  <text text-anchor="middle" x="300" y="425" fill="#A7F3D0" font-family="serif" font-size="20" font-weight="600" letter-spacing="2">KAIVALYA UPANISHAD</text>
+  
+  <g transform="translate(300, 465)">
+    <line x1="-60" y1="0" x2="-8" y2="0" stroke="#34D399" stroke-width="1" opacity="0.5"/>
+    <circle cx="0" cy="0" r="2.5" fill="#34D399" opacity="0.7"/>
+    <line x1="8" y1="0" x2="60" y2="0" stroke="#34D399" stroke-width="1" opacity="0.5"/>
+  </g>
+
+  <text text-anchor="middle" x="300" y="505" fill="#A7F3D0" font-family="serif" font-style="italic" font-size="14" opacity="0.8">The Supreme State of Aloneness and Ultimate Liberation</text>
+
+  <g transform="translate(300, 690)">
+    <text text-anchor="middle" y="-22" fill="#047857" font-family="sans-serif" font-size="11" font-weight="600" letter-spacing="3" opacity="0.6">UPANISHAD BY</text>
+    <text text-anchor="middle" y="2" fill="#ECFDF5" font-family="serif" font-size="20" font-weight="bold" letter-spacing="2">OSHO</text>
+    <text text-anchor="middle" y="22" fill="#047857" font-family="monospace" font-size="10" letter-spacing="3" opacity="0.4">SACRED ARCHIVE</text>
+  </g>
+</svg>
+

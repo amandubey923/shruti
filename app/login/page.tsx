@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -58,47 +59,57 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto py-12 px-4 animate-fade-in">
-      <div className="text-center mb-8">
-        <Link href="/" className="inline-block font-serif text-2xl font-bold tracking-widest text-foreground hover:text-accent transition-colors">
-          SHRUTI
+    <div className="max-w-md mx-auto py-12 sm:py-16 px-4 animate-fade-in pb-20">
+      <div className="text-center mb-8 space-y-3">
+        <Link href="/" className="inline-flex items-center gap-3 group" aria-label="Return home">
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
+            <Image
+              src="/brand/shruti-mark.svg"
+              alt="SHRUTI Logo"
+              fill
+              sizes="40px"
+              className="object-cover"
+            />
+          </div>
+          <span className="font-serif tracking-[0.2em] text-2xl font-extrabold text-foreground group-hover:text-accent transition-colors">
+            SHRUTI
+          </span>
         </Link>
-        <h1 className="font-serif text-xl font-bold text-foreground mt-3">
+        <h1 className="font-serif text-2xl font-bold text-foreground">
           Sign In to Your Sanctuary
         </h1>
-        <p className="text-xs text-foreground-subtle mt-1">
-          Sync your favorites, playlists, and listening progress across devices.
+        <p className="text-xs sm:text-sm text-foreground-muted">
+          Sync your listening history, saved series, and favorites across devices.
         </p>
       </div>
 
       {!isConfigured && (
-        <div className="mb-6 p-4 rounded-xl bg-accent/10 border border-accent/30 text-accent text-xs leading-relaxed">
-          <p className="font-semibold mb-1">Notice: Firebase keys are being configured</p>
+        <div className="mb-6 p-4 rounded-2xl bg-accent/10 border border-accent/30 text-accent text-xs leading-relaxed">
+          <p className="font-bold mb-1">Local Listening Active</p>
           <p className="text-foreground-muted">
-            You can browse, search, and listen continuously as a guest. All local progress is saved to your browser.
+            You can continuously browse, search, and listen as a guest. All bookmarks and progress are automatically saved to your browser.
           </p>
         </div>
       )}
 
       {error && (
-        <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+        <div className="mb-4 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium">
           {error}
         </div>
       )}
 
       {resetSent && (
-        <div className="mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-xs">
+        <div className="mb-4 p-3.5 rounded-2xl bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-medium">
           Password reset link sent to {email}.
         </div>
       )}
 
-      <div className="bg-background-surface border border-background-border rounded-2xl p-6 shadow-xl space-y-4">
-        <Button
+      <div className="bg-background-card border border-background-border rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
+        <button
           type="button"
-          variant="secondary"
-          className="w-full gap-2 text-xs"
           onClick={handleGoogleLogin}
-          isLoading={loading}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-full bg-background-elevated hover:bg-background-hover text-foreground font-semibold text-xs sm:text-sm border border-background-border transition-all active:scale-95 min-h-[44px]"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path
@@ -119,19 +130,19 @@ export default function LoginPage() {
             />
           </svg>
           <span>Continue with Google</span>
-        </Button>
+        </button>
 
         <div className="flex items-center my-4">
           <div className="flex-1 border-t border-background-border" />
-          <span className="px-3 text-[10px] text-foreground-subtle uppercase tracking-wider">
+          <span className="px-3 text-[10px] text-foreground-subtle uppercase tracking-widest font-bold">
             or
           </span>
           <div className="flex-1 border-t border-background-border" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1">
+            <label className="block text-xs font-semibold text-foreground-muted mb-1.5">
               Email Address
             </label>
             <input
@@ -140,19 +151,19 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="listener@domain.com"
-              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-sm text-foreground focus:outline-none focus:border-accent"
+              className="w-full bg-background-elevated border border-background-border rounded-xl px-4 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:border-accent min-h-[44px]"
             />
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-medium text-foreground-muted">Password</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-foreground-muted">Password</label>
               <button
                 type="button"
                 onClick={handleResetPassword}
-                className="text-[11px] text-accent hover:underline"
+                className="text-[11px] font-semibold text-accent hover:underline"
               >
-                Forgot?
+                Forgot Password?
               </button>
             </div>
             <input
@@ -161,20 +172,24 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-sm text-foreground focus:outline-none focus:border-accent"
+              className="w-full bg-background-elevated border border-background-border rounded-xl px-4 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:border-accent min-h-[44px]"
             />
           </div>
 
-          <Button type="submit" className="w-full text-xs" isLoading={loading}>
-            Sign In
-          </Button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-full bg-accent hover:bg-accent-hover text-stone-950 font-bold text-xs sm:text-sm shadow-md shadow-accent/25 transition-all active:scale-95 min-h-[44px] mt-2"
+          >
+            {loading ? 'Signing In...' : 'Sign In'}
+          </button>
         </form>
 
         <div className="text-center pt-2">
           <p className="text-xs text-foreground-subtle">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-accent hover:underline font-medium">
-              Create an account
+            <Link href="/signup" className="text-accent hover:underline font-bold">
+              Join Sanctuary
             </Link>
           </p>
         </div>

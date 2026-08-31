@@ -69,6 +69,8 @@ export function MobileFullPlayer() {
         text: `Listen to ${currentTrack.title} on SHRUTI`,
         url: shareUrl,
       }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(shareUrl);
     }
   };
 
@@ -87,36 +89,38 @@ export function MobileFullPlayer() {
       {/* Header bar */}
       <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={() => setIsExpandedPlayer(false)}
-          className="p-2 text-foreground-muted hover:text-foreground rounded-full hover:bg-background-elevated transition-colors -ml-2"
+          className="w-11 h-11 text-foreground-muted hover:text-foreground rounded-full hover:bg-background-elevated transition-colors flex items-center justify-center -ml-2"
           aria-label="Collapse player"
         >
           <ChevronDown className="w-6 h-6" />
         </button>
 
         <div className="text-center">
-          <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-accent">
+          <span className="text-[10px] tracking-[0.25em] uppercase font-bold text-accent">
             Now Listening
           </span>
           {currentTrack.seriesName && (
-            <p className="text-xs text-foreground-muted truncate max-w-[200px]">
+            <p className="text-xs font-semibold text-foreground-muted truncate max-w-[200px]">
               {currentTrack.seriesName}
             </p>
           )}
         </div>
 
         <button
+          type="button"
           onClick={() => setShowQueue(!showQueue)}
-          className="p-2 text-foreground-muted hover:text-foreground rounded-full hover:bg-background-elevated transition-colors -mr-2"
+          className="w-11 h-11 text-foreground-muted hover:text-foreground rounded-full hover:bg-background-elevated transition-colors flex items-center justify-center -mr-2"
           aria-label="View Queue"
         >
-          <ListMusic className="w-5 h-5" />
+          <ListMusic className="w-5 h-5 text-accent" />
         </button>
       </div>
 
       {/* Main Center Area: Artwork & Typography */}
-      <div className="my-auto py-6 flex flex-col items-center max-w-sm mx-auto w-full">
-        <div className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-2xl shadow-black/80 border border-background-border/60 mb-8 bg-background-elevated">
+      <div className="my-auto py-4 flex flex-col items-center max-w-sm mx-auto w-full">
+        <div className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-2xl border border-background-border mb-6 bg-background-elevated">
           {coverUrl ? (
             <Image
               src={coverUrl}
@@ -127,19 +131,19 @@ export function MobileFullPlayer() {
               priority
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-accent text-3xl font-serif">
+            <div className="w-full h-full flex items-center justify-center text-accent text-3xl font-serif font-bold">
               SHRUTI
             </div>
           )}
         </div>
 
         {/* Track Title & Speaker */}
-        <div className="w-full flex items-start justify-between gap-4 mb-6">
+        <div className="w-full flex items-start justify-between gap-4 mb-5">
           <div className="min-w-0 flex-1">
-            <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground leading-tight truncate">
+            <h2 className="font-serif text-xl sm:text-2xl font-extrabold text-foreground leading-tight truncate">
               {currentTrack.title}
             </h2>
-            <p className="text-sm text-foreground-muted mt-1 truncate">
+            <p className="text-sm font-semibold text-foreground-muted mt-1 truncate">
               {currentTrack.artistName || 'SHRUTI Master Recording'}
             </p>
             {currentTrack.subtitle && (
@@ -150,9 +154,10 @@ export function MobileFullPlayer() {
           </div>
 
           <button
+            type="button"
             onClick={() => toggleFavorite(currentTrack.id)}
-            className={`p-2.5 rounded-full border border-background-border transition-colors ${
-              isFav ? 'text-red-400 bg-red-500/10' : 'text-foreground-subtle hover:text-foreground'
+            className={`w-11 h-11 rounded-full border border-background-border transition-all flex items-center justify-center flex-shrink-0 ${
+              isFav ? 'text-red-500 bg-red-500/10 border-red-500/30' : 'text-foreground-subtle hover:text-foreground'
             }`}
             aria-label={isFav ? 'Remove favorite' : 'Add favorite'}
           >
@@ -171,63 +176,78 @@ export function MobileFullPlayer() {
         </div>
 
         {/* Primary Playback Transport Controls */}
-        <div className="w-full flex items-center justify-between mb-8 px-2">
+        <div className="w-full flex items-center justify-between mb-6 px-1">
           <button
+            type="button"
             onClick={toggleShuffle}
-            className={`p-2 rounded-full transition-colors ${
-              isShuffled ? 'text-accent' : 'text-foreground-subtle'
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+              isShuffled ? 'text-accent bg-accent/15' : 'text-foreground-subtle'
             }`}
+            aria-label="Toggle Shuffle"
           >
             <Shuffle className="w-4 h-4" />
           </button>
 
           <button
+            type="button"
             onClick={playPrevious}
-            className="p-2 text-foreground-muted hover:text-foreground transition-colors"
+            className="w-11 h-11 text-foreground-muted hover:text-foreground transition-colors flex items-center justify-center active:scale-90"
+            aria-label="Previous Track"
           >
             <SkipBack className="w-5 h-5" />
           </button>
 
           <button
+            type="button"
             onClick={() => skipTime(-15)}
-            className="p-2 text-foreground-subtle hover:text-foreground transition-colors"
+            className="w-11 h-11 text-foreground-subtle hover:text-foreground transition-colors flex items-center justify-center active:scale-90"
+            aria-label="Skip back 15 seconds"
           >
             <RotateCcw className="w-5 h-5" />
           </button>
 
+          {/* Large Dominant Play/Pause CTA */}
           <button
+            type="button"
             onClick={togglePlay}
             disabled={isLoading}
-            className="w-16 h-16 rounded-full bg-accent hover:bg-accent-hover text-background flex items-center justify-center transition-all transform active:scale-95 shadow-xl shadow-accent/20"
+            className="w-18 h-18 rounded-full bg-accent hover:bg-accent-hover text-stone-950 flex items-center justify-center transition-all transform active:scale-95 shadow-2xl shadow-accent/30"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isLoading ? (
-              <div className="w-6 h-6 border-2 border-background border-t-transparent rounded-full animate-spin" />
+              <div className="w-7 h-7 border-3 border-stone-950 border-t-transparent rounded-full animate-spin" />
             ) : isPlaying ? (
-              <Pause className="w-7 h-7 fill-current" />
+              <Pause className="w-8 h-8 fill-current" />
             ) : (
-              <Play className="w-7 h-7 fill-current ml-1" />
+              <Play className="w-8 h-8 fill-current ml-1" />
             )}
           </button>
 
           <button
+            type="button"
             onClick={() => skipTime(30)}
-            className="p-2 text-foreground-subtle hover:text-foreground transition-colors"
+            className="w-11 h-11 text-foreground-subtle hover:text-foreground transition-colors flex items-center justify-center active:scale-90"
+            aria-label="Skip forward 30 seconds"
           >
             <RotateCw className="w-5 h-5" />
           </button>
 
           <button
+            type="button"
             onClick={playNext}
-            className="p-2 text-foreground-muted hover:text-foreground transition-colors"
+            className="w-11 h-11 text-foreground-muted hover:text-foreground transition-colors flex items-center justify-center active:scale-90"
+            aria-label="Next Track"
           >
             <SkipForward className="w-5 h-5" />
           </button>
 
           <button
+            type="button"
             onClick={toggleRepeat}
-            className={`p-2 rounded-full transition-colors ${
-              repeatMode !== 'off' ? 'text-accent' : 'text-foreground-subtle'
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+              repeatMode !== 'off' ? 'text-accent bg-accent/15' : 'text-foreground-subtle'
             }`}
+            aria-label={`Repeat mode: ${repeatMode}`}
           >
             {repeatMode === 'one' ? (
               <Repeat1 className="w-5 h-5" />
@@ -238,15 +258,17 @@ export function MobileFullPlayer() {
         </div>
 
         {/* Secondary Actions: Speed, Share, Download */}
-        <div className="w-full flex items-center justify-around border-t border-background-border/40 pt-4">
+        <div className="w-full flex items-center justify-around border-t border-background-border/60 pt-4">
           <SpeedSelector
             currentSpeed={playbackRate}
             onSpeedChange={setSpeed}
           />
 
           <button
+            type="button"
             onClick={handleShare}
-            className="flex items-center gap-1.5 text-xs text-foreground-subtle hover:text-foreground transition-colors p-2"
+            className="flex items-center gap-1.5 text-xs font-semibold text-foreground-subtle hover:text-foreground transition-colors p-2.5 rounded-xl active:bg-background-elevated"
+            aria-label="Share track link"
           >
             <Share2 className="w-4 h-4" />
             <span>Share</span>
@@ -254,8 +276,10 @@ export function MobileFullPlayer() {
 
           {currentTrack.isDownloadable && (
             <button
+              type="button"
               onClick={handleDownload}
-              className="flex items-center gap-1.5 text-xs text-foreground-subtle hover:text-foreground transition-colors p-2"
+              className="flex items-center gap-1.5 text-xs font-semibold text-foreground-subtle hover:text-foreground transition-colors p-2.5 rounded-xl active:bg-background-elevated"
+              aria-label="Download MP3 file"
             >
               <Download className="w-4 h-4" />
               <span>Download</span>

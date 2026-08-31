@@ -21,8 +21,16 @@ export function ProgressBar({
   const barRef = useRef<HTMLDivElement>(null);
   const [hoverPosition, setHoverPosition] = useState<number | null>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const percentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const percentage = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
+
+  const updateSeekFromEvent = (clientX: number) => {
+    if (!barRef.current || duration <= 0) return;
+    const rect = barRef.current.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    onSeek(pos * duration);
+  };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!barRef.current || duration <= 0) return;
@@ -30,57 +38,78 @@ export function ProgressBar({
     const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     setHoverPosition(pos * 100);
     setHoverTime(pos * duration);
+    if (isDragging) {
+      updateSeekFromEvent(e.clientX);
+    }
   };
 
   const handleMouseLeave = () => {
-    setHoverPosition(null);
-    setHoverTime(null);
+    if (!isDragging) {
+      setHoverPosition(null);
+      setHoverTime(null);
+    }
   };
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!barRef.current || duration <= 0) return;
-    const rect = barRef.current.getBoundingClientRect();
-    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    onSeek(pos * duration);
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    updateSeekFromEvent(e.clientX);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
   };
 
   return (
-    <div className={`w-full flex items-center gap-3 select-none ${className}`}>
+    <div className={`w-full flex items-center gap-3.5 select-none ${className}`}>
       {showTimestamps && (
-        <span className="text-[11px] font-mono text-foreground-subtle min-w-[40px] text-right">
+        <span className="text-[11px] sm:text-xs font-mono font-bold text-foreground-muted min-w-[42px] text-right">
           {formatDuration(currentTime)}
         </span>
       )}
 
       <div
         ref={barRef}
-        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative flex-1 h-2 py-1.5 flex items-center cursor-pointer group"
+        className="relative flex-1 h-6 flex items-center cursor-pointer group py-2"
+        role="slider"
+        aria-label="Seek position slider"
+        aria-valuemin={0}
+        aria-valuemax={duration}
+        aria-valuenow={currentTime}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft') onSeek(Math.max(0, currentTime - 5));
+          if (e.key === 'ArrowRight') onSeek(Math.min(duration, currentTime + 5));
+        }}
       >
-        <div className="w-full h-1 bg-background-hover rounded-full overflow-hidden relative">
+        {/* Track Background */}
+        <div className="w-full h-1.5 bg-background-elevated group-hover:h-2 rounded-full overflow-hidden relative border border-background-border/40 transition-all">
           {hoverPosition !== null && (
             <div
-              className="absolute top-0 bottom-0 left-0 bg-foreground-muted/20 transition-all rounded-full"
+              className="absolute top-0 bottom-0 left-0 bg-accent/20 transition-all rounded-full"
               style={{ width: `${hoverPosition}%` }}
             />
           )}
 
           <div
-            className="h-full bg-accent rounded-full transition-all group-hover:bg-accent-hover"
+            className="h-full bg-accent rounded-full transition-all"
             style={{ width: `${percentage}%` }}
           />
         </div>
 
+        {/* Tactile Scrubber Thumb */}
         <div
-          className="absolute w-3 h-3 bg-accent rounded-full -ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md pointer-events-none ring-2 ring-accent/30"
+          className="absolute w-3.5 h-3.5 bg-accent border-2 border-stone-950 rounded-full -ml-1.75 opacity-90 group-hover:opacity-100 group-hover:scale-125 transition-all shadow-md pointer-events-none ring-2 ring-accent/30"
           style={{ left: `${percentage}%` }}
         />
 
+        {/* Hover Tooltip Timestamp */}
         {hoverPosition !== null && hoverTime !== null && (
           <div
-            className="absolute -top-7 transform -translate-x-1/2 px-1.5 py-0.5 bg-background-surface border border-background-border rounded text-[10px] font-mono text-foreground shadow-lg pointer-events-none"
+            className="absolute -top-7 transform -translate-x-1/2 px-2 py-0.5 bg-background-surface border border-background-border rounded-md text-[10px] font-mono font-bold text-foreground shadow-xl pointer-events-none"
             style={{ left: `${hoverPosition}%` }}
           >
             {formatDuration(hoverTime)}
@@ -89,7 +118,7 @@ export function ProgressBar({
       </div>
 
       {showTimestamps && (
-        <span className="text-[11px] font-mono text-foreground-subtle min-w-[40px]">
+        <span className="text-[11px] sm:text-xs font-mono font-bold text-foreground-subtle min-w-[42px]">
           {formatDuration(duration)}
         </span>
       )}
