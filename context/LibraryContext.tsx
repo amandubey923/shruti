@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   ReactNode,
 } from 'react';
 import { useAuth } from './AuthContext';
@@ -53,6 +54,10 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [savedSeries, setSavedSeries] = useState<string[]>([]);
   const [history, setHistory] = useState<PlaybackProgress[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+
+  // O(1) Sets for high-performance track-list rendering
+  const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
+  const savedSeriesSet = useMemo(() => new Set(savedSeries), [savedSeries]);
 
   const refreshLibrary = useCallback(async () => {
     if (user?.uid) {
@@ -117,98 +122,160 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     refreshLibrary();
   }, [refreshLibrary]);
 
-  const toggleFavorite = async (audioId: string) => {
-    const isCurrentlyFav = favorites.includes(audioId);
-    const updatedFavs = isCurrentlyFav
-      ? favorites.filter((id) => id !== audioId)
-      : [...favorites, audioId];
+  const toggleFavorite = useCallback(async (audioId: string) => {
+    setFavorites((prev) => {
+      const isCurrentlyFav = prev.includes(audioId);
+      const updated = isCurrentlyFav
+        ? prev.filter((id) => id !== audioId)
+        : [...prev, audioId];
 
-    setFavorites(updatedFavs);
+      if (user?.uid) {
+        toggleUserFavorite(user.uid, audioId, !isCurrentlyFav);
+      } else {
+        try {
+          localStorage.setItem(LOCAL_FAVORITES_KEY, JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
+  }, [user?.uid]);
 
-    if (user?.uid) {
-      await toggleUserFavorite(user.uid, audioId, !isCurrentlyFav);
-    } else {
-      localStorage.setItem(LOCAL_FAVORITES_KEY, JSON.stringify(updatedFavs));
-    }
-  };
+  const isFavorite = useCallback((audioId: string) => favoriteSet.has(audioId), [favoriteSet]);
 
-  const isFavorite = (audioId: string) => favorites.includes(audioId);
+  const toggleSaveSeries = useCallback(async (seriesId: string) => {
+    setSavedSeries((prev) => {
+      const isCurrentlySaved = prev.includes(seriesId);
+      const updated = isCurrentlySaved
+        ? prev.filter((id) => id !== seriesId)
+        : [...prev, seriesId];
 
-  const toggleSaveSeries = async (seriesId: string) => {
-    const isCurrentlySaved = savedSeries.includes(seriesId);
-    const updated = isCurrentlySaved
-      ? savedSeries.filter((id) => id !== seriesId)
-      : [...savedSeries, seriesId];
+      if (user?.uid) {
+        toggleSavedSeries(user.uid, seriesId, !isCurrentlySaved);
+      } else {
+        try {
+          localStorage.setItem(LOCAL_SAVED_SERIES_KEY, JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
+  }, [user?.uid]);
 
-    setSavedSeries(updated);
+  const isSeriesSaved = useCallback((seriesId: string) => savedSeriesSet.has(seriesId), [savedSeriesSet]);
 
-    if (user?.uid) {
-      await toggleSavedSeries(user.uid, seriesId, !isCurrentlySaved);
-    } else {
-      localStorage.setItem(LOCAL_SAVED_SERIES_KEY, JSON.stringify(updated));
-    }
-  };
-
-  const isSeriesSaved = (seriesId: string) => savedSeries.includes(seriesId);
-
-  const createPlaylist = async (name: string, description?: string): Promise<Playlist> => {
+  const createPlaylist = useCallback(async (name: string, description?: string): Promise<Playlist> => {
     const newPlaylist = await createUserPlaylist(user?.uid || 'guest', name, description);
-    const updated = [newPlaylist, ...playlists];
-    setPlaylists(updated);
-
-    if (!user?.uid) {
-      localStorage.setItem(LOCAL_PLAYLISTS_KEY, JSON.stringify(updated));
-    }
+    setPlaylists((prev) => {
+      const updated = [newPlaylist, ...prev];
+      if (!user?.uid) {
+        try {
+          localStorage.setItem(LOCAL_PLAYLISTS_KEY, JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
     return newPlaylist;
-  };
+  }, [user?.uid]);
 
-  const deletePlaylist = async (playlistId: string) => {
-    const updated = playlists.filter((p) => p.id !== playlistId);
-    setPlaylists(updated);
-
+  const deletePlaylist = useCallback(async (playlistId: string) => {
+    setPlaylists((prev) => {
+      const updated = prev.filter((p) => p.id !== playlistId);
+      if (!user?.uid) {
+        try {
+          localStorage.setItem(LOCAL_PLAYLISTS_KEY, JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
     if (user?.uid) {
       await deleteUserPlaylist(user.uid, playlistId);
-    } else {
-      localStorage.setItem(LOCAL_PLAYLISTS_KEY, JSON.stringify(updated));
     }
-  };
+  }, [user?.uid]);
 
-  const addTrack = async (playlistId: string, audioId: string) => {
+  const addTrackToPlaylistAction = useCallback(async (playlistId: string, audioId: string) => {
+    setPlaylists((prev) =>
+      prev.map((p) => {
+        const currentIds = p.trackIds || [];
+        if (p.id === playlistId && !currentIds.includes(audioId)) {
+          const updated = { ...p, trackIds: [...currentIds, audioId], trackCount: (p.trackCount || 0) + 1 };
+          return updated;
+        }
+        return p;
+      })
+    );
     if (user?.uid) {
       await addTrackToPlaylist(user.uid, playlistId, audioId);
+    } else {
+      try {
+        setPlaylists((current) => {
+          localStorage.setItem(LOCAL_PLAYLISTS_KEY, JSON.stringify(current));
+          return current;
+        });
+      } catch {}
     }
-    setPlaylists((prev) =>
-      prev.map((p) => (p.id === playlistId ? { ...p, trackCount: p.trackCount + 1 } : p))
-    );
-  };
+  }, [user?.uid]);
 
-  const removeTrack = async (playlistId: string, audioId: string) => {
+  const removeTrackFromPlaylistAction = useCallback(async (playlistId: string, audioId: string) => {
+    setPlaylists((prev) =>
+      prev.map((p) => {
+        if (p.id === playlistId) {
+          const currentIds = p.trackIds || [];
+          const updated = {
+            ...p,
+            trackIds: currentIds.filter((id) => id !== audioId),
+            trackCount: Math.max(0, (p.trackCount || 0) - 1),
+          };
+          return updated;
+        }
+        return p;
+      })
+    );
     if (user?.uid) {
       await removeTrackFromPlaylist(user.uid, playlistId, audioId);
+    } else {
+      try {
+        setPlaylists((current) => {
+          localStorage.setItem(LOCAL_PLAYLISTS_KEY, JSON.stringify(current));
+          return current;
+        });
+      } catch {}
     }
-    setPlaylists((prev) =>
-      prev.map((p) => (p.id === playlistId ? { ...p, trackCount: Math.max(0, p.trackCount - 1) } : p))
-    );
-  };
+  }, [user?.uid]);
+
+  const value = useMemo(
+    () => ({
+      favorites,
+      savedSeries,
+      history,
+      playlists,
+      toggleFavorite,
+      isFavorite,
+      toggleSaveSeries,
+      isSeriesSaved,
+      createPlaylist,
+      deletePlaylist,
+      addTrackToPlaylist: addTrackToPlaylistAction,
+      removeTrackFromPlaylist: removeTrackFromPlaylistAction,
+      refreshLibrary,
+    }),
+    [
+      favorites,
+      savedSeries,
+      history,
+      playlists,
+      toggleFavorite,
+      isFavorite,
+      toggleSaveSeries,
+      isSeriesSaved,
+      createPlaylist,
+      deletePlaylist,
+      addTrackToPlaylistAction,
+      removeTrackFromPlaylistAction,
+      refreshLibrary,
+    ]
+  );
 
   return (
-    <LibraryContext.Provider
-      value={{
-        favorites,
-        savedSeries,
-        history,
-        playlists,
-        toggleFavorite,
-        isFavorite,
-        toggleSaveSeries,
-        isSeriesSaved,
-        createPlaylist,
-        deletePlaylist,
-        addTrackToPlaylist: addTrack,
-        removeTrackFromPlaylist: removeTrack,
-        refreshLibrary,
-      }}
-    >
+    <LibraryContext.Provider value={value}>
       {children}
     </LibraryContext.Provider>
   );
