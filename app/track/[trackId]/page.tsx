@@ -21,6 +21,7 @@ import { getTrackById, getAllTracks } from '@/lib/firestore';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
 import { formatDuration, formatDate, resolveTrackCover } from '@/lib/utils';
+import { getSupabaseAudioUrl } from '@/lib/supabase';
 import { AudioCard } from '@/components/audio/AudioCard';
 
 export default function TrackDetailPage() {
@@ -108,7 +109,7 @@ export default function TrackDetailPage() {
   const handleDownload = () => {
     if (!track.isDownloadable) return;
     const link = document.createElement('a');
-    link.href = track.audioUrl;
+    link.href = getSupabaseAudioUrl(track.audioUrl);
     link.download = `${track.slug || track.id}.mp3`;
     document.body.appendChild(link);
     link.click();

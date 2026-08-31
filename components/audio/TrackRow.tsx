@@ -7,6 +7,7 @@ import { AudioTrack } from '@/types/audio';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
 import { formatDuration } from '@/lib/utils';
+import { getSupabaseAudioUrl } from '@/lib/supabase';
 
 interface TrackRowProps {
   track: AudioTrack;
@@ -112,7 +113,7 @@ export function TrackRow({ track, index, onPlay }: TrackRowProps) {
 
         {track.isDownloadable && (
           <a
-            href={track.audioUrl}
+            href={getSupabaseAudioUrl(track.audioUrl)}
             download={`${track.slug || track.id}.mp3`}
             onClick={(e) => e.stopPropagation()}
             className="p-1.5 text-foreground-subtle hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block"

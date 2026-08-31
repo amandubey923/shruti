@@ -26,6 +26,7 @@ import { VolumeControl } from './VolumeControl';
 import { SpeedSelector } from './SpeedSelector';
 import { QueueDrawer } from './QueueDrawer';
 import { resolveTrackCover } from '@/lib/utils';
+import { getSupabaseAudioUrl } from '@/lib/supabase';
 
 export function DesktopPlayer() {
   const {
@@ -84,7 +85,7 @@ export function DesktopPlayer() {
   const handleDownload = () => {
     if (!currentTrack.isDownloadable) return;
     const link = document.createElement('a');
-    link.href = currentTrack.audioUrl;
+    link.href = getSupabaseAudioUrl(currentTrack.audioUrl);
     link.download = `${currentTrack.slug || currentTrack.id}.mp3`;
     document.body.appendChild(link);
     link.click();

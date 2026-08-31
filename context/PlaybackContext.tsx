@@ -14,6 +14,7 @@ import { PlaybackProgress } from '@/types/user';
 import { useAuth } from './AuthContext';
 import { saveUserProgress } from '@/lib/firestore';
 import { resolveTrackCover } from '@/lib/utils';
+import { getSupabaseAudioUrl } from '@/lib/supabase';
 
 interface PlaybackContextType {
   currentTrack: AudioTrack | null;
@@ -197,7 +198,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
       if (!isSameTrack) {
         setCurrentTrack(track);
-        audio.src = track.audioUrl;
+        audio.src = getSupabaseAudioUrl(track.audioUrl);
         audio.load();
 
         const idx = queue.findIndex((item) => item.id === track.id);
