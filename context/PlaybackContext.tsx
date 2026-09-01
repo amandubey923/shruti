@@ -4,6 +4,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useCallback,
@@ -19,8 +20,6 @@ import { getSupabaseAudioUrl } from '@/lib/supabase';
 interface PlaybackContextType {
   currentTrack: AudioTrack | null;
   isPlaying: boolean;
-  currentTime: number;
-  duration: number;
   volume: number;
   isMuted: boolean;
   playbackRate: number;
@@ -52,10 +51,26 @@ interface PlaybackContextType {
   playSeriesAll: (tracks: AudioTrack[], startIndex?: number) => void;
 }
 
+interface PlaybackTimeContextType {
+  currentTime: number;
+  duration: number;
+}
+
 const PlaybackContext = createContext<PlaybackContextType | undefined>(undefined);
+const PlaybackTimeContext = createContext<PlaybackTimeContextType | undefined>(undefined);
 
 const LOCAL_PROGRESS_KEY = 'shruti_playback_progress';
 const LOCAL_LAST_TRACK_KEY = 'shruti_last_track';
+
+/**
+ * Duration reported by the media element, or 0 while the real metadata is
+ * unavailable (NaN / Infinity / not yet loaded).
+ */
+function realDuration(audio: HTMLAudioElement): number {
+  const value = audio.duration;
+  if (typeof value !== 'number' || isNaN(value) || !isFinite(value) || value <= 0) return 0;
+  return value;
+}
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -77,6 +92,13 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const [isExpandedPlayer, setIsExpandedPlayer] = useState<boolean>(false);
 
   const lastSaveTimeRef = useRef<number>(0);
+  const currentTrackRef = useRef<AudioTrack | null>(null);
+  const playbackRateRef = useRef<number>(1);
+  const saveProgressRef = useRef<(track: AudioTrack, pos: number, dur: number) => void>(() => {});
+  const loadTokenRef = useRef<number>(0);
+
+  currentTrackRef.current = currentTrack;
+  playbackRateRef.current = playbackRate;
 
   // Initialize HTML5 Audio Element singleton
   useEffect(() => {
@@ -101,11 +123,12 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     }
 
     const updateRealDuration = () => {
-      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration) && audio.duration > 0) {
-        setDuration(audio.duration);
+      const real = realDuration(audio);
+      if (real > 0) {
+        setDuration(real);
         setCurrentTrack((prev) => {
-          if (prev && (!prev.duration || Math.abs(prev.duration - audio.duration) > 2)) {
-            return { ...prev, duration: Math.round(audio.duration) };
+          if (prev && (!prev.duration || Math.abs(prev.duration - real) > 2)) {
+            return { ...prev, duration: Math.round(real) };
           }
           return prev;
         });
@@ -124,13 +147,11 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
-      if (duration === 0 && audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
-        updateRealDuration();
-      }
+      const track = currentTrackRef.current;
       const now = Date.now();
-      if (now - lastSaveTimeRef.current > 10000 && currentTrack) {
+      if (now - lastSaveTimeRef.current > 10000 && track) {
         lastSaveTimeRef.current = now;
-        saveProgress(currentTrack, audio.currentTime, audio.duration || currentTrack.duration);
+        saveProgressRef.current(track, audio.currentTime, realDuration(audio));
       }
     };
 
@@ -143,8 +164,9 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     };
     const handlePause = () => {
       setIsPlaying(false);
-      if (currentTrack) {
-        saveProgress(currentTrack, audio.currentTime, audio.duration || currentTrack.duration);
+      const track = currentTrackRef.current;
+      if (track) {
+        saveProgressRef.current(track, audio.currentTime, realDuration(audio));
       }
     };
 
@@ -177,6 +199,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const saveProgress = useCallback(
     (track: AudioTrack, pos: number, dur: number) => {
       if (!track || isNaN(pos)) return;
+
       const progressData: PlaybackProgress = {
         audioId: track.id,
         lastPosition: Math.floor(pos),
@@ -208,6 +231,8 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     [user?.uid]
   );
 
+  saveProgressRef.current = saveProgress;
+
   const playTrack = useCallback(
     (track: AudioTrack, initialPosition?: number) => {
       const audio = audioRef.current;
@@ -216,15 +241,16 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       setError(null);
       setIsLoading(true);
 
-      const isSameTrack = currentTrack?.id === track.id;
+      const isSameTrack = currentTrackRef.current?.id === track.id;
 
       if (!isSameTrack) {
         setCurrentTrack(track);
+        currentTrackRef.current = track;
         setDuration(track.duration || 0);
 
         const src = getSupabaseAudioUrl(track.audioUrl);
         audio.src = src;
-        audio.playbackRate = playbackRate;
+        audio.playbackRate = playbackRateRef.current;
 
         // Restore resume position if available
         let resumePos = 0;
@@ -244,8 +270,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
           }
         }
 
+        const token = ++loadTokenRef.current;
         const handleCanPlay = () => {
-          if (resumePos > 0 && resumePos < (audio.duration || track.duration)) {
+          if (token !== loadTokenRef.current) return;
+          if (resumePos > 0 && resumePos < (realDuration(audio) || track.duration)) {
             audio.currentTime = resumePos;
             setCurrentTime(resumePos);
           } else {
@@ -267,7 +295,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [currentTrack?.id, playbackRate]
+    []
   );
 
   const pauseTrack = useCallback(() => {
@@ -275,23 +303,24 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resumeTrack = useCallback(() => {
-    if (audioRef.current && currentTrack) {
+    if (audioRef.current && currentTrackRef.current) {
       audioRef.current.play().catch(() => setIsPlaying(false));
     }
-  }, [currentTrack]);
+  }, []);
 
   const togglePlay = useCallback(() => {
-    if (!audioRef.current || !currentTrack) return;
-    if (isPlaying) {
-      pauseTrack();
-    } else {
+    const audio = audioRef.current;
+    if (!audio || !currentTrackRef.current) return;
+    if (audio.paused) {
       resumeTrack();
+    } else {
+      pauseTrack();
     }
-  }, [isPlaying, currentTrack, pauseTrack, resumeTrack]);
+  }, [pauseTrack, resumeTrack]);
 
   const seek = useCallback((seconds: number) => {
     if (!audioRef.current) return;
-    audioRef.current.currentTime = Math.max(0, Math.min(seconds, audioRef.current.duration || Infinity));
+    audioRef.current.currentTime = Math.max(0, Math.min(seconds, realDuration(audioRef.current) || Infinity));
     setCurrentTime(audioRef.current.currentTime);
   }, []);
 
@@ -373,8 +402,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     if (!audio) return;
 
     const handleEnded = () => {
-      if (currentTrack) {
-        saveProgress(currentTrack, audio.duration || currentTrack.duration, audio.duration || currentTrack.duration);
+      const track = currentTrackRef.current;
+      if (track) {
+        const dur = realDuration(audio) || track.duration;
+        saveProgressRef.current(track, dur, dur);
       }
 
       if (repeatMode === 'one') {
@@ -388,7 +419,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
     audio.addEventListener('ended', handleEnded);
     return () => audio.removeEventListener('ended', handleEnded);
-  }, [currentTrack, repeatMode, playNext, saveProgress]);
+  }, [repeatMode, playNext]);
 
   const addToQueue = useCallback((track: AudioTrack) => {
     setQueue((prev) => [...prev, track]);
@@ -422,45 +453,84 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     [playTrack]
   );
 
+  const value = useMemo<PlaybackContextType>(
+    () => ({
+      currentTrack,
+      isPlaying,
+      volume,
+      isMuted,
+      playbackRate,
+      repeatMode,
+      isShuffled,
+      isLoading,
+      error,
+      queue,
+      queueIndex,
+      isExpandedPlayer,
+      setIsExpandedPlayer,
+      playTrack,
+      pauseTrack,
+      resumeTrack,
+      togglePlay,
+      seek,
+      skipTime,
+      playNext,
+      playPrevious,
+      setVolume,
+      toggleMute,
+      setSpeed,
+      toggleRepeat,
+      toggleShuffle,
+      addToQueue,
+      playNextInQueue,
+      removeFromQueue,
+      clearQueue,
+      playSeriesAll,
+    }),
+    [
+      currentTrack,
+      isPlaying,
+      volume,
+      isMuted,
+      playbackRate,
+      repeatMode,
+      isShuffled,
+      isLoading,
+      error,
+      queue,
+      queueIndex,
+      isExpandedPlayer,
+      playTrack,
+      pauseTrack,
+      resumeTrack,
+      togglePlay,
+      seek,
+      skipTime,
+      playNext,
+      playPrevious,
+      setVolume,
+      toggleMute,
+      setSpeed,
+      toggleRepeat,
+      toggleShuffle,
+      addToQueue,
+      playNextInQueue,
+      removeFromQueue,
+      clearQueue,
+      playSeriesAll,
+    ]
+  );
+
+  const timeValue = useMemo<PlaybackTimeContextType>(
+    () => ({ currentTime, duration }),
+    [currentTime, duration]
+  );
+
   return (
-    <PlaybackContext.Provider
-      value={{
-        currentTrack,
-        isPlaying,
-        currentTime,
-        duration,
-        volume,
-        isMuted,
-        playbackRate,
-        repeatMode,
-        isShuffled,
-        isLoading,
-        error,
-        queue,
-        queueIndex,
-        isExpandedPlayer,
-        setIsExpandedPlayer,
-        playTrack,
-        pauseTrack,
-        resumeTrack,
-        togglePlay,
-        seek,
-        skipTime,
-        playNext,
-        playPrevious,
-        setVolume,
-        toggleMute,
-        setSpeed,
-        toggleRepeat,
-        toggleShuffle,
-        addToQueue,
-        playNextInQueue,
-        removeFromQueue,
-        clearQueue,
-        playSeriesAll,
-      }}
-    >
-      {children}
+    <PlaybackContext.Provider value={value}>
+      <PlaybackTimeContext.Provider value={timeValue}>
+        {children}
+      </PlaybackTimeContext.Provider>
     </PlaybackContext.Provider>
   );
 }
@@ -469,6 +539,19 @@ export function usePlayback() {
   const context = useContext(PlaybackContext);
   if (!context) {
     throw new Error('usePlayback must be used within a PlaybackProvider');
+  }
+  return context;
+}
+
+/**
+ * Playback position and real (metadata-derived) duration. Kept in its own
+ * context so that catalog components subscribing to `usePlayback` are not
+ * re-rendered on every `timeupdate`.
+ */
+export function usePlaybackTime() {
+  const context = useContext(PlaybackTimeContext);
+  if (!context) {
+    throw new Error('usePlaybackTime must be used within a PlaybackProvider');
   }
   return context;
 }

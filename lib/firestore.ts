@@ -23,35 +23,77 @@ import { SEED_TRACKS, SEED_SERIES, SEED_ARTISTS, SEED_CATEGORIES } from './seedD
 let cachedTracks: AudioTrack[] | null = null;
 let cachedSeries: Series[] | null = null;
 
+// In-flight requests, so concurrent callers share a single Firestore read.
+let tracksRequest: Promise<AudioTrack[]> | null = null;
+let seriesRequest: Promise<Series[]> | null = null;
+
+// Lookup indexes rebuilt whenever the catalog cache is replaced.
+let trackIndex: Map<string, AudioTrack> | null = null;
+let seriesIndex: Map<string, Series> | null = null;
+let tracksBySeries: Map<string, AudioTrack[]> | null = null;
+
+function indexTracks(tracks: AudioTrack[]) {
+  trackIndex = new Map();
+  tracksBySeries = new Map();
+  for (const track of tracks) {
+    trackIndex.set(track.id, track);
+    if (track.slug) trackIndex.set(track.slug, track);
+    if (!track.seriesId) continue;
+    const group = tracksBySeries.get(track.seriesId);
+    if (group) group.push(track);
+    else tracksBySeries.set(track.seriesId, [track]);
+  }
+  tracksBySeries.forEach((group) => {
+    group.sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
+  });
+}
+
+function indexSeries(series: Series[]) {
+  seriesIndex = new Map();
+  for (const item of series) {
+    seriesIndex.set(item.id, item);
+    if (item.slug) seriesIndex.set(item.slug, item);
+  }
+}
+
 /* =========================================================================
    PUBLIC CATALOG DATA (Audio, Series, Artists, Categories)
    ========================================================================= */
 
 export async function getAllTracks(): Promise<AudioTrack[]> {
   if (cachedTracks) return cachedTracks;
+  if (tracksRequest) return tracksRequest;
+
+  const cache = (tracks: AudioTrack[]) => {
+    cachedTracks = tracks;
+    indexTracks(tracks);
+    return tracks;
+  };
 
   if (!isFirebaseConfigured) {
-    cachedTracks = SEED_TRACKS;
-    return cachedTracks;
+    return cache(SEED_TRACKS);
   }
-  try {
-    const snap = await getDocs(query(collection(db, 'audio'), where('published', '==', true)));
-    if (snap.empty) {
-      cachedTracks = SEED_TRACKS;
-    } else {
-      cachedTracks = snap.docs.map((d) => ({ id: d.id, ...d.data() } as AudioTrack));
+
+  tracksRequest = (async () => {
+    try {
+      const snap = await getDocs(query(collection(db, 'audio'), where('published', '==', true)));
+      return cache(
+        snap.empty ? SEED_TRACKS : snap.docs.map((d) => ({ id: d.id, ...d.data() } as AudioTrack))
+      );
+    } catch (err) {
+      console.warn('Firestore fetch tracks failed, using seed data fallback:', err);
+      return cache(SEED_TRACKS);
+    } finally {
+      tracksRequest = null;
     }
-    return cachedTracks;
-  } catch (err) {
-    console.warn('Firestore fetch tracks failed, using seed data fallback:', err);
-    cachedTracks = SEED_TRACKS;
-    return cachedTracks;
-  }
+  })();
+
+  return tracksRequest;
 }
 
 export async function getTrackById(id: string): Promise<AudioTrack | null> {
-  const all = await getAllTracks();
-  const matched = all.find((t) => t.id === id || t.slug === id);
+  await getAllTracks();
+  const matched = trackIndex?.get(id);
   if (matched) return matched;
 
   if (!isFirebaseConfigured) {
@@ -76,29 +118,38 @@ export async function getTrackById(id: string): Promise<AudioTrack | null> {
 
 export async function getAllSeries(): Promise<Series[]> {
   if (cachedSeries) return cachedSeries;
+  if (seriesRequest) return seriesRequest;
+
+  const cache = (series: Series[]) => {
+    cachedSeries = series;
+    indexSeries(series);
+    return series;
+  };
 
   if (!isFirebaseConfigured) {
-    cachedSeries = SEED_SERIES;
-    return cachedSeries;
+    return cache(SEED_SERIES);
   }
-  try {
-    const snap = await getDocs(query(collection(db, 'series'), where('published', '==', true)));
-    if (snap.empty) {
-      cachedSeries = SEED_SERIES;
-    } else {
-      cachedSeries = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Series));
+
+  seriesRequest = (async () => {
+    try {
+      const snap = await getDocs(query(collection(db, 'series'), where('published', '==', true)));
+      return cache(
+        snap.empty ? SEED_SERIES : snap.docs.map((d) => ({ id: d.id, ...d.data() } as Series))
+      );
+    } catch (err) {
+      console.warn('Firestore fetch series failed, using fallback:', err);
+      return cache(SEED_SERIES);
+    } finally {
+      seriesRequest = null;
     }
-    return cachedSeries;
-  } catch (err) {
-    console.warn('Firestore fetch series failed, using fallback:', err);
-    cachedSeries = SEED_SERIES;
-    return cachedSeries;
-  }
+  })();
+
+  return seriesRequest;
 }
 
 export async function getSeriesById(id: string): Promise<Series | null> {
-  const all = await getAllSeries();
-  const matched = all.find((s) => s.id === id || s.slug === id);
+  await getAllSeries();
+  const matched = seriesIndex?.get(id);
   if (matched) return matched;
 
   if (!isFirebaseConfigured) {
@@ -122,10 +173,9 @@ export async function getSeriesById(id: string): Promise<Series | null> {
 }
 
 export async function getTracksForSeries(seriesId: string): Promise<AudioTrack[]> {
-  const all = await getAllTracks();
-  return all
-    .filter((t) => t.seriesId === seriesId)
-    .sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
+  await getAllTracks();
+  const group = tracksBySeries?.get(seriesId);
+  return group ? [...group] : [];
 }
 
 export function getAllCategories(): CategoryInfo[] {

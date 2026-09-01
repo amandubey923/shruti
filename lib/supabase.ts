@@ -67,6 +67,25 @@ export const supabase: SupabaseClient = createClient(
 );
 
 /**
+ * Percent-encode each segment of a storage object path. Object keys may contain
+ * spaces and other characters that are not valid in a URL path.
+ */
+function encodeStoragePath(path: string): string {
+  return path
+    .split('/')
+    .map((segment) => {
+      let raw = segment;
+      try {
+        raw = decodeURIComponent(segment);
+      } catch {
+        // Segment is not valid percent-encoding; encode it verbatim.
+      }
+      return encodeURIComponent(raw);
+    })
+    .join('/');
+}
+
+/**
  * Generate the public streaming URL for an audio file located in Supabase Storage.
  *
  * Examples:
@@ -85,7 +104,7 @@ export function getSupabaseAudioUrl(pathOrUrl: string, bucket: string = AUDIO_BU
 
   if (isSupabaseConfigured && finalUrl) {
     const baseUrl = finalUrl.replace(/\/+$/, '');
-    return `${baseUrl}/storage/v1/object/public/${bucket}/${cleanPath}`;
+    return `${baseUrl}/storage/v1/object/public/${bucket}/${encodeStoragePath(cleanPath)}`;
   }
 
   // Fallback if Supabase URL is not configured yet
