@@ -281,6 +281,7 @@ export async function createUserPlaylist(
   const playlist: Playlist = {
     id: newId,
     userId,
+    name: title,
     title,
     description: description || '',
     trackIds: [],
@@ -323,8 +324,9 @@ export async function addTrackToPlaylist(
     const snap = await getDoc(pRef);
     if (snap.exists()) {
       const data = snap.data() as Playlist;
-      if (!data.trackIds.includes(audioId)) {
-        const updatedTrackIds = [...data.trackIds, audioId];
+      const currentIds = data.trackIds || [];
+      if (!currentIds.includes(audioId)) {
+        const updatedTrackIds = [...currentIds, audioId];
         await setDoc(
           pRef,
           {
@@ -352,7 +354,8 @@ export async function removeTrackFromPlaylist(
     const snap = await getDoc(pRef);
     if (snap.exists()) {
       const data = snap.data() as Playlist;
-      const updatedTrackIds = data.trackIds.filter((id) => id !== audioId);
+      const currentIds = data.trackIds || [];
+      const updatedTrackIds = currentIds.filter((id) => id !== audioId);
       await setDoc(
         pRef,
         {

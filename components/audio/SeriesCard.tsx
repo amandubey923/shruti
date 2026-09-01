@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Play, Bookmark, Layers, Clock } from 'lucide-react';
@@ -13,7 +13,7 @@ interface SeriesCardProps {
   featured?: boolean;
 }
 
-export function SeriesCard({ series, featured = false }: SeriesCardProps) {
+export const SeriesCard = memo(function SeriesCard({ series, featured = false }: SeriesCardProps) {
   const { isSeriesSaved, toggleSaveSeries } = useLibrary();
   const isSaved = isSeriesSaved(series.id);
 
@@ -123,4 +123,4 @@ export function SeriesCard({ series, featured = false }: SeriesCardProps) {
       </div>
     </div>
   );
-}
+});

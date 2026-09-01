@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import Link from 'next/link';
 import { Play, Pause, Heart, Download, Volume2 } from 'lucide-react';
 import { AudioTrack } from '@/types/audio';
@@ -15,7 +15,7 @@ interface TrackRowProps {
   onPlay?: () => void;
 }
 
-export function TrackRow({ track, index, onPlay }: TrackRowProps) {
+export const TrackRow = memo(function TrackRow({ track, index, onPlay }: TrackRowProps) {
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
   const { isFavorite, toggleFavorite } = useLibrary();
 
@@ -153,4 +153,4 @@ export function TrackRow({ track, index, onPlay }: TrackRowProps) {
       </div>
     </div>
   );
-}
+});
