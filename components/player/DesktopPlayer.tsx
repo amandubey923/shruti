@@ -19,7 +19,7 @@ import {
   Share2,
   Maximize2,
 } from 'lucide-react';
-import { usePlayback } from '@/context/PlaybackContext';
+import { usePlayback, usePlaybackTime } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
 import { ProgressBar } from './ProgressBar';
 import { VolumeControl } from './VolumeControl';
@@ -32,8 +32,6 @@ export function DesktopPlayer() {
   const {
     currentTrack,
     isPlaying,
-    currentTime,
-    duration,
     volume,
     isMuted,
     playbackRate,
@@ -57,6 +55,7 @@ export function DesktopPlayer() {
     clearQueue,
     setIsExpandedPlayer,
   } = usePlayback();
+  const { currentTime, duration } = usePlaybackTime();
 
   const { isFavorite, toggleFavorite } = useLibrary();
   const [showQueue, setShowQueue] = useState(false);

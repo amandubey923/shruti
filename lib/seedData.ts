@@ -2,30 +2,35 @@ import { AudioTrack, Series, Artist, CategoryInfo } from '@/types/audio';
 
 /**
  * SHRUTI CANONICAL AUDIO CATALOG
- * Strictly verified against Supabase Storage bucket: `audio/`
  *
- * Real MP3 Durations measured directly from MP3 frame headers (64kbps CBR mono).
+ * Every entry corresponds to an object that exists in the Supabase Storage
+ * bucket `audio/` (verified by HTTP HEAD against the public object URL).
+ *
+ * Durations are the decoded media durations reported by the file container
+ * (ffprobe `format=duration`, rounded to whole seconds) — never estimated from
+ * file size and an assumed bitrate. At runtime the player replaces these with
+ * the browser's own `loadedmetadata`/`durationchange` value.
  */
 
 // 1. OSHO - KRISHNA SMRITI (17 Verified Parts in Storage)
 const krishnaParts = [
-  { num: 1, p: '01', dur: 2742 },
-  { num: 2, p: '02', dur: 4572 },
-  { num: 3, p: '03', dur: 3671 },
-  { num: 4, p: '04', dur: 4236 },
-  { num: 5, p: '05', dur: 2454 },
-  { num: 9, p: '09', dur: 2211 },
-  { num: 11, p: '11', dur: 3555 },
-  { num: 12, p: '12', dur: 3972 },
-  { num: 13, p: '13', dur: 3888 },
-  { num: 14, p: '14', dur: 5620 },
-  { num: 15, p: '15', dur: 4244 },
-  { num: 17, p: '17', dur: 2880 },
-  { num: 18, p: '18', dur: 5250 },
-  { num: 19, p: '19', dur: 3658 },
-  { num: 20, p: '20', dur: 5440 },
-  { num: 21, p: '21', dur: 2676 },
-  { num: 22, p: '22', dur: 3649 },
+  { num: 1, p: '01', dur: 4200 },
+  { num: 2, p: '02', dur: 6952 },
+  { num: 3, p: '03', dur: 4164 },
+  { num: 4, p: '04', dur: 5504 },
+  { num: 5, p: '05', dur: 3281 },
+  { num: 9, p: '09', dur: 4164 },
+  { num: 11, p: '11', dur: 4707 },
+  { num: 12, p: '12', dur: 5387 },
+  { num: 13, p: '13', dur: 5110 },
+  { num: 14, p: '14', dur: 6809 },
+  { num: 15, p: '15', dur: 4838 },
+  { num: 17, p: '17', dur: 3619 },
+  { num: 18, p: '18', dur: 5917 },
+  { num: 19, p: '19', dur: 4377 },
+  { num: 20, p: '20', dur: 6811 },
+  { num: 21, p: '21', dur: 3773 },
+  { num: 22, p: '22', dur: 4869 },
 ];
 
 const krishnaTracks: AudioTrack[] = krishnaParts.map(({ num, p, dur }) => ({
@@ -53,8 +58,8 @@ const krishnaTracks: AudioTrack[] = krishnaParts.map(({ num, p, dur }) => ({
 
 // 2. OSHO - EK OMKAR SATNAM (20 Verified Parts in Storage)
 const ekOmkarDurations = [
-  4810, 4572, 4700, 4251, 4458, 4979, 3806, 3303, 3972, 3719,
-  5247, 4001, 3512, 4160, 3707, 4086, 4362, 5072, 4446, 4835,
+  6135, 5100, 5199, 5557, 4662, 5142, 4535, 4215, 4911, 4713,
+  6506, 4935, 4315, 4855, 4841, 4921, 5463, 6053, 5364, 5958,
 ];
 
 const ekOmkarTracks: AudioTrack[] = Array.from({ length: 20 }, (_, i) => {
@@ -86,8 +91,8 @@ const ekOmkarTracks: AudioTrack[] = Array.from({ length: 20 }, (_, i) => {
 
 // 3. OSHO - MAHAVEER VANI (20 Verified Parts in Storage)
 const mahaveerDurations = [
-  4116, 4038, 3816, 4066, 3991, 4172, 4056, 3885, 3843, 3855,
-  4210, 4136, 4038, 3972, 4015, 3892, 4120, 3965, 3980, 3910,
+  4823, 5817, 4641, 5194, 4616, 5092, 5043, 4931, 4557, 5355,
+  4768, 4901, 4404, 5170, 5258, 5047, 4774, 4884, 4715, 4318,
 ];
 
 const mahaveerTracks: AudioTrack[] = Array.from({ length: 20 }, (_, i) => {
@@ -118,7 +123,7 @@ const mahaveerTracks: AudioTrack[] = Array.from({ length: 20 }, (_, i) => {
 });
 
 // 4. OSHO - MARE HE JOGI MARO (3 Verified Parts in Storage)
-const mareHeJogiDurations = [5480, 5295, 5120];
+const mareHeJogiDurations = [7052, 6537, 6606];
 
 const mareHeJogiTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
   const num = i + 1;
@@ -148,7 +153,7 @@ const mareHeJogiTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
 });
 
 // 5. OSHO - NIRVAN UPANISHAD (4 Verified Parts in Storage)
-const nirvanDurations = [3840, 3620, 3590, 3632];
+const nirvanDurations = [5939, 4792, 4603, 3815];
 
 const nirvanTracks: AudioTrack[] = Array.from({ length: 4 }, (_, i) => {
   const num = i + 1;
@@ -178,7 +183,7 @@ const nirvanTracks: AudioTrack[] = Array.from({ length: 4 }, (_, i) => {
 });
 
 // 6. OSHO - ADHYATAM UPANISHAD (3 Verified Parts in Storage)
-const adhyatamDurations = [5299, 4431, 5194];
+const adhyatamDurations = [6978, 5584, 5802];
 
 const adhyatamTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
   const num = i + 1;
@@ -208,7 +213,7 @@ const adhyatamTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
 });
 
 // 7. OSHO - ASAMBHAV KRANTI (10 Verified Parts in Storage)
-const asambhavDurations = [2853, 3429, 2673, 3460, 3422, 2548, 2831, 4040, 3235, 3428];
+const asambhavDurations = [3915, 4744, 3579, 4546, 4585, 3669, 3939, 4611, 3422, 3846];
 
 const asambhavTracks: AudioTrack[] = Array.from({ length: 10 }, (_, i) => {
   const num = i + 1;
@@ -238,7 +243,7 @@ const asambhavTracks: AudioTrack[] = Array.from({ length: 10 }, (_, i) => {
 });
 
 // 8. OSHO - ISHAVASHYA UPANISHAD (3 Verified Parts in Storage)
-const ishavashyaDurations = [3486, 2337, 3396];
+const ishavashyaDurations = [4902, 3817, 3932];
 
 const ishavashyaTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
   const num = i + 1;
@@ -268,7 +273,7 @@ const ishavashyaTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
 });
 
 // 9. OSHO - KAIVALYA UPANISHAD (3 Verified Parts in Storage)
-const kaivalyaDurations = [4263, 4661, 5930];
+const kaivalyaDurations = [5980, 6773, 6345];
 
 const kaivalyaTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
   const num = i + 1;
@@ -298,7 +303,7 @@ const kaivalyaTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
 });
 
 // 10. OSHO - BHAJ GOVINDAM (10 Verified Parts in Storage)
-const bhajGovindamDurations = [4978, 4922, 3523, 4056, 3285, 4007, 3377, 4874, 4200, 4270];
+const bhajGovindamDurations = [6252, 5661, 4868, 4883, 4165, 5038, 4253, 5228, 4814, 4488];
 
 const bhajGovindamTracks: AudioTrack[] = Array.from({ length: 10 }, (_, i) => {
   const num = i + 1;
@@ -354,7 +359,7 @@ export const SEED_SERIES: Series[] = [
       'Spontaneous discourses exploring the multidimensionality of Krishna — dancer, warrior, lover, statesman, and the ultimate celebration of life without guilt.',
     coverImage: '/covers/krishna-smriti.svg',
     totalTracks: 17,
-    totalDuration: krishnaParts.reduce((acc, cur) => acc + cur.dur, 0), // 60,518s (~16h 48m)
+    totalDuration: krishnaParts.reduce((acc, cur) => acc + cur.dur, 0),
     trackIds: krishnaTracks.map((t) => t.id),
     category: 'Discourses',
     tags: ['Krishna', 'Gita', 'Discourses', 'Philosophy', 'Hindi'],
@@ -372,7 +377,7 @@ export const SEED_SERIES: Series[] = [
       'Exposition of Japji Sahib by Guru Nanak, presenting devotion and surrender as the pinnacle of human awakening.',
     coverImage: '/covers/ek-omkar-satnam.svg',
     totalTracks: 20,
-    totalDuration: ekOmkarDurations.reduce((acc, cur) => acc + cur, 0), // 86,608s (~24h 03m)
+    totalDuration: ekOmkarDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: ekOmkarTracks.map((t) => t.id),
     category: 'Philosophy',
     tags: ['Nanak', 'Japji', 'Sufi', 'Devotion', 'Hindi'],
@@ -390,7 +395,7 @@ export const SEED_SERIES: Series[] = [
       'A deep and fearless commentary on the message of Bhagwan Mahavira, illuminating the science of consciousness, austerities, and unconditional non-violence.',
     coverImage: '/covers/mahaveer-vani.svg',
     totalTracks: 20,
-    totalDuration: mahaveerDurations.reduce((acc, cur) => acc + cur, 0), // 80,081s (~22h 14m)
+    totalDuration: mahaveerDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: mahaveerTracks.map((t) => t.id),
     category: 'Philosophy',
     tags: ['Mahavira', 'Jainism', 'Awareness', 'Silence', 'Hindi'],
@@ -408,7 +413,7 @@ export const SEED_SERIES: Series[] = [
       'Discourses on Adi Shankaracharya’s Bhaj Govindam — a fierce, compassionate wake-up call dismantling worldly illusions with intense devotion and clarity.',
     coverImage: '/covers/bhaj-govindam.svg',
     totalTracks: 10,
-    totalDuration: bhajGovindamDurations.reduce((acc, cur) => acc + cur, 0), // 41,492s (~11h 31m)
+    totalDuration: bhajGovindamDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: bhajGovindamTracks.map((t) => t.id),
     category: 'Discourses',
     tags: ['Bhaj Govindam', 'Adi Shankara', 'Devotion', 'Wisdom', 'Hindi'],
@@ -426,7 +431,7 @@ export const SEED_SERIES: Series[] = [
       'Discourses on Gorakhnath: An exploration into the esoteric mystery of dying into meditation to be reborn into the eternal.',
     coverImage: '/covers/mare-he-jogi-maro.svg',
     totalTracks: 3,
-    totalDuration: mareHeJogiDurations.reduce((acc, cur) => acc + cur, 0), // 15,895s (~4h 24m)
+    totalDuration: mareHeJogiDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: mareHeJogiTracks.map((t) => t.id),
     category: 'Discourses',
     tags: ['Gorakh', 'Nath', 'Yoga', 'Mysticism', 'Hindi'],
@@ -444,7 +449,7 @@ export const SEED_SERIES: Series[] = [
       'Deep luminous insights into the ancient Vedic wisdom of liberation, transcendental silence, and cosmic unity.',
     coverImage: '/covers/nirvan-upanishad.svg',
     totalTracks: 4,
-    totalDuration: nirvanDurations.reduce((acc, cur) => acc + cur, 0), // 14,682s (~4h 04m)
+    totalDuration: nirvanDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: nirvanTracks.map((t) => t.id),
     category: 'Upanishads',
     tags: ['Upanishads', 'Vedanta', 'Enlightenment', 'Hindi'],
@@ -462,7 +467,7 @@ export const SEED_SERIES: Series[] = [
       'Profound commentary on the Adhyatam Upanishad, exploring the inner spiritual dimension of self-inquiry and the dissolution of duality.',
     coverImage: '/covers/adhyatam-upanishad.svg',
     totalTracks: 3,
-    totalDuration: adhyatamDurations.reduce((acc, cur) => acc + cur, 0), // 14,924s (~4h 08m)
+    totalDuration: adhyatamDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: adhyatamTracks.map((t) => t.id),
     category: 'Upanishads',
     tags: ['Upanishads', 'Vedanta', 'Inner Inquiry', 'Hindi'],
@@ -480,7 +485,7 @@ export const SEED_SERIES: Series[] = [
       'The impossible revolution: discourses on breaking conditioned thought patterns and bringing about a radical mutation in human consciousness.',
     coverImage: '/covers/asambhav-kranti.svg',
     totalTracks: 10,
-    totalDuration: asambhavDurations.reduce((acc, cur) => acc + cur, 0), // 31,919s (~8h 51m)
+    totalDuration: asambhavDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: asambhavTracks.map((t) => t.id),
     category: 'Discourses',
     tags: ['Revolution', 'Transformation', 'Discourses', 'Hindi'],
@@ -498,7 +503,7 @@ export const SEED_SERIES: Series[] = [
       'Commentaries on the opening jewel of the Upanishads — Ishavashya: the realization that the entire cosmos is permeated with the sacred divine whole.',
     coverImage: '/covers/ishavashya-upanishad.svg',
     totalTracks: 3,
-    totalDuration: ishavashyaDurations.reduce((acc, cur) => acc + cur, 0), // 9,219s (~2h 33m)
+    totalDuration: ishavashyaDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: ishavashyaTracks.map((t) => t.id),
     category: 'Upanishads',
     tags: ['Upanishads', 'Isha', 'Vedanta', 'Divine Wholeness', 'Hindi'],
@@ -516,7 +521,7 @@ export const SEED_SERIES: Series[] = [
       'A deep exposition of Kaivalya — the supreme state of spiritual aloneness, transcendence of worldly bondage, and merging into pure existence.',
     coverImage: '/covers/kaivalya-upanishad.svg',
     totalTracks: 3,
-    totalDuration: kaivalyaDurations.reduce((acc, cur) => acc + cur, 0), // 14,854s (~4h 07m)
+    totalDuration: kaivalyaDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: kaivalyaTracks.map((t) => t.id),
     category: 'Upanishads',
     tags: ['Upanishads', 'Kaivalya', 'Aloneness', 'Liberation', 'Hindi'],

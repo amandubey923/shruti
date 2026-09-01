@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Play, Pause, Heart, Music } from 'lucide-react';
-import { usePlayback } from '@/context/PlaybackContext';
+import { usePlayback, usePlaybackTime } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
 import { resolveTrackCover } from '@/lib/utils';
 
@@ -11,12 +11,11 @@ export function MobileMiniPlayer() {
   const {
     currentTrack,
     isPlaying,
-    currentTime,
-    duration,
     togglePlay,
     isLoading,
     setIsExpandedPlayer,
   } = usePlayback();
+  const { currentTime, duration } = usePlaybackTime();
 
   const { isFavorite, toggleFavorite } = useLibrary();
 

@@ -18,7 +18,7 @@ import {
   Share2,
   Download,
 } from 'lucide-react';
-import { usePlayback } from '@/context/PlaybackContext';
+import { usePlayback, usePlaybackTime } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
 import { ProgressBar } from './ProgressBar';
 import { SpeedSelector } from './SpeedSelector';
@@ -30,8 +30,6 @@ export function MobileFullPlayer() {
   const {
     currentTrack,
     isPlaying,
-    currentTime,
-    duration,
     playbackRate,
     repeatMode,
     isShuffled,
@@ -52,6 +50,7 @@ export function MobileFullPlayer() {
     removeFromQueue,
     clearQueue,
   } = usePlayback();
+  const { currentTime, duration } = usePlaybackTime();
 
   const { isFavorite, toggleFavorite } = useLibrary();
   const [showQueue, setShowQueue] = useState(false);
