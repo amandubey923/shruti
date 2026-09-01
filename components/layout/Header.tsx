@@ -35,7 +35,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
               <span className="font-serif tracking-[0.2em] text-xl sm:text-2xl font-extrabold text-foreground group-hover:text-accent transition-colors leading-none">
                 SHRUTI
               </span>
-              <span className="text-[9px] uppercase tracking-[0.3em] font-semibold text-accent -mt-0.5 font-sans">
+              <span className="hidden sm:block text-[9px] uppercase tracking-[0.3em] font-semibold text-accent -mt-0.5 font-sans">
                 Audio Archive
               </span>
             </div>
@@ -70,8 +70,9 @@ export function Header({ onOpenSearch }: HeaderProps) {
             <Search className="w-5 h-5 text-accent" />
           </button>
 
-          {/* Prominent Theme Toggle */}
-          <ThemeToggle />
+          {/* Mobile: icon-only toggle. Desktop: segmented toggle */}
+          <ThemeToggle variant="icon" className="sm:hidden" />
+          <ThemeToggle className="hidden sm:flex" />
 
           {/* User Profile / Auth */}
           {user ? (

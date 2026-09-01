@@ -2,13 +2,13 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export const AUDIO_BUCKET = 'audio';
 
-function resolveSupabaseCredentials(): { url: string; publishableKey: string; isConfigured: boolean } {
-  const envUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/^['"]|['"]$/g, '');
-  const envKey = (
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    ''
-  ).trim().replace(/^['"=]|['"]$/g, '');
+function resolveCredentials(
+  urlEnv: string | undefined,
+  keyEnv: string | undefined,
+  keyEnv2?: string | undefined
+): { url: string; publishableKey: string; isConfigured: boolean } {
+  const envUrl = (urlEnv || '').trim().replace(/^['"]|['"]$/g, '');
+  const envKey = (keyEnv || keyEnv2 || '').trim().replace(/^['"=]|['"]$/g, '');
 
   let url = envUrl;
   let publishableKey = envKey;
@@ -49,64 +49,95 @@ function resolveSupabaseCredentials(): { url: string; publishableKey: string; is
   return { url, publishableKey, isConfigured };
 }
 
-const { url: finalUrl, publishableKey: finalKey, isConfigured: configuredState } = resolveSupabaseCredentials();
-
-export const isSupabaseConfigured = configuredState;
-export const supabaseUrl = finalUrl;
-
-// Supabase client singleton using public publishable / anon credentials
-export const supabase: SupabaseClient = createClient(
-  finalUrl || 'https://placeholder.supabase.co',
-  finalKey || 'placeholder-anon-key',
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  }
+// ── Primary Supabase ──────────────────────────────────────────────────────────
+const cred1 = resolveCredentials(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+export const isSupabaseConfigured = cred1.isConfigured;
+export const supabaseUrl = cred1.url;
+
+export const supabase: SupabaseClient = createClient(
+  cred1.url || 'https://placeholder.supabase.co',
+  cred1.publishableKey || 'placeholder-anon-key',
+  { auth: { persistSession: true, autoRefreshToken: true } }
+);
+
+// ── Secondary Supabase ────────────────────────────────────────────────────────
+const cred2 = resolveCredentials(
+  process.env.NEXT_PUBLIC_SUPABASE_2_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_2_PUBLISHABLE_KEY
+);
+
+export const isSupabase2Configured = cred2.isConfigured;
+export const supabaseUrl2 = cred2.url;
+
+export const supabase2: SupabaseClient = createClient(
+  cred2.url || 'https://placeholder2.supabase.co',
+  cred2.publishableKey || 'placeholder-anon-key-2',
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
+
+// ── All configured sources (extensible — add supabase3 etc. here later) ──────
+export const supabaseSources: Array<{
+  client: SupabaseClient;
+  url: string;
+  isConfigured: boolean;
+  index: number;
+}> = [
+  { client: supabase,  url: cred1.url, isConfigured: cred1.isConfigured, index: 1 },
+  { client: supabase2, url: cred2.url, isConfigured: cred2.isConfigured, index: 2 },
+];
+
 /**
- * Generate the public streaming URL for an audio file located in Supabase Storage.
- *
- * Examples:
- * - 'osho/krishna-smriti/OSHO-Krishna_Smriti_01.mp3' -> 'https://<project-ref>.supabase.co/storage/v1/object/public/audio/osho/krishna-smriti/OSHO-Krishna_Smriti_01.mp3'
- * - 'https://cdn.example.com/audio.mp3' -> returns as-is
+ * Generate a public streaming URL for an audio file in a specific Supabase project.
+ * @param pathOrUrl - relative path like 'osho/series/file.mp3', or a full URL (returned as-is)
+ * @param projectUrl - base URL of the Supabase project (defaults to primary)
+ * @param bucket - storage bucket name
  */
-export function getSupabaseAudioUrl(pathOrUrl: string, bucket: string = AUDIO_BUCKET): string {
+export function getSupabaseAudioUrl(
+  pathOrUrl: string,
+  projectUrl: string = supabaseUrl,
+  bucket: string = AUDIO_BUCKET
+): string {
   if (!pathOrUrl) return '';
-
-  // If already a full HTTP/HTTPS URL, return directly
-  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
-    return pathOrUrl;
-  }
-
+  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) return pathOrUrl;
   const cleanPath = pathOrUrl.replace(/^\/+/, '');
-
-  if (isSupabaseConfigured && finalUrl) {
-    const baseUrl = finalUrl.replace(/\/+$/, '');
-    return `${baseUrl}/storage/v1/object/public/${bucket}/${cleanPath}`;
+  if (projectUrl) {
+    const base = projectUrl.replace(/\/+$/, '');
+    return `${base}/storage/v1/object/public/${bucket}/${cleanPath}`;
   }
-
-  // Fallback if Supabase URL is not configured yet
   return cleanPath;
 }
 
+/** Convenience: primary Supabase audio URL */
+export function getSupabaseAudioUrl1(pathOrUrl: string, bucket = AUDIO_BUCKET): string {
+  return getSupabaseAudioUrl(pathOrUrl, supabaseUrl, bucket);
+}
+
+/** Convenience: secondary Supabase audio URL */
+export function getSupabaseAudioUrl2(pathOrUrl: string, bucket = AUDIO_BUCKET): string {
+  return getSupabaseAudioUrl(pathOrUrl, supabaseUrl2, bucket);
+}
+
 /**
- * List audio files in a specific Supabase storage folder (e.g. 'osho/krishna-smriti')
+ * List audio files in a Supabase storage folder.
  */
-export async function listSupabaseAudioFiles(folderPath: string, bucket: string = AUDIO_BUCKET) {
-  if (!isSupabaseConfigured) {
-    return [];
-  }
+export async function listSupabaseAudioFiles(
+  folderPath: string,
+  client: SupabaseClient = supabase,
+  bucket: string = AUDIO_BUCKET
+) {
   try {
     const cleanFolder = folderPath.replace(/^\/+|\/+$/g, '');
-    const { data, error } = await supabase.storage.from(bucket).list(cleanFolder, {
-      limit: 100,
+    const { data, error } = await client.storage.from(bucket).list(cleanFolder, {
+      limit: 200,
       sortBy: { column: 'name', order: 'asc' },
     });
     if (error) {
-      console.warn('Error listing Supabase audio files:', error.message);
+      console.warn(`Storage list error [${folderPath}]:`, error.message);
       return [];
     }
     return data || [];
@@ -115,4 +146,3 @@ export async function listSupabaseAudioFiles(folderPath: string, bucket: string 
     return [];
   }
 }
-

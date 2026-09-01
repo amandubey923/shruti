@@ -23,7 +23,7 @@ export function BottomNavigation({ onOpenSearch }: BottomNavigationProps) {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-lg border-t border-background-border px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-pb"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background-card/98 backdrop-blur-lg border-t border-background-border px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-pb"
       aria-label="Mobile Navigation"
     >
       {navItems.map((item) => {

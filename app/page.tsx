@@ -3,12 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Play, Sparkles, Compass, Clock, ArrowRight } from 'lucide-react';
-import { AudioTrack, Series, Artist, CategoryInfo } from '@/types/audio';
+import { AudioTrack, Series, CategoryInfo } from '@/types/audio';
 import { PlaybackProgress } from '@/types/user';
 import {
   getAllTracks,
   getAllSeries,
-  getAllArtists,
   getAllCategories,
 } from '@/lib/firestore';
 import { usePlayback } from '@/context/PlaybackContext';
@@ -20,7 +19,6 @@ import { formatDuration } from '@/lib/utils';
 export default function HomePage() {
   const [tracks, setTracks] = useState<AudioTrack[]>([]);
   const [seriesList, setSeriesList] = useState<Series[]>([]);
-  const [artists, setArtists] = useState<Artist[]>([]);
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [lastProgress, setLastProgress] = useState<PlaybackProgress | null>(null);
   const [showAllMobileSeries, setShowAllMobileSeries] = useState(false);
@@ -29,14 +27,12 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadContent() {
-      const [allT, allS, allA] = await Promise.all([
+      const [allT, allS] = await Promise.all([
         getAllTracks(),
         getAllSeries(),
-        getAllArtists(),
       ]);
       setTracks(allT);
       setSeriesList(allS);
-      setArtists(allA);
       setCategories(getAllCategories());
 
       try {
@@ -147,30 +143,8 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Featured Collection Spotlight */}
-      {featuredSeries && (
-        <section className="space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-[10px] uppercase tracking-widest font-bold text-accent">
-                Featured Collection
-              </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-foreground">
-                Master Audio Discourses
-              </h2>
-            </div>
-            <Link
-              href={`/series/${featuredSeries.slug || featuredSeries.id}`}
-              className="text-xs sm:text-sm text-accent hover:text-accent-hover font-bold inline-flex items-center gap-1.5 transition-colors"
-            >
-              <span>View All Parts</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
 
-          <SeriesCard series={featuredSeries} featured />
-        </section>
-      )}
+
 
       {/* Available Audio Series / Books */}
       <section className="space-y-5">

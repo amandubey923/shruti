@@ -19,17 +19,11 @@ export const SeriesCard = memo(function SeriesCard({ series, featured = false }:
 
   return (
     <div
-      className={`group relative bg-background-card hover:bg-background-elevated border border-background-border hover:border-accent/40 rounded-2xl sm:rounded-3xl transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-md ${
-        featured ? 'col-span-2 md:col-span-2 lg:col-span-3 md:flex-row' : ''
-      }`}
+      className="group relative bg-background-card hover:bg-background-elevated border border-background-border hover:border-accent/40 rounded-2xl sm:rounded-3xl transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-md"
     >
       {/* Cover Artwork Container */}
       <div
-        className={`relative overflow-hidden bg-background-elevated flex-shrink-0 ${
-          featured
-            ? 'w-full md:w-5/12 aspect-[4/3] md:aspect-auto min-h-[180px] sm:min-h-[260px]'
-            : 'w-full aspect-[4/3] sm:aspect-[16/10]'
-        }`}
+        className="relative overflow-hidden bg-background-elevated flex-shrink-0 w-full aspect-[4/3] sm:aspect-[16/10]"
       >
         {series.coverImage ? (
           <Image

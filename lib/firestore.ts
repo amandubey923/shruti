@@ -16,6 +16,7 @@ import { AudioTrack, Series, Artist, CategoryInfo } from '@/types/audio';
 import { PlaybackProgress } from '@/types/user';
 import { Playlist } from '@/types/playlist';
 import { SEED_TRACKS, SEED_SERIES, SEED_ARTISTS, SEED_CATEGORIES } from './seedData';
+import { getMergedCatalog } from './catalog';
 
 /* =========================================================================
    IN-MEMORY CACHING LAYER FOR HIGH PERFORMANCE
@@ -30,17 +31,23 @@ let cachedSeries: Series[] | null = null;
 export async function getAllTracks(): Promise<AudioTrack[]> {
   if (cachedTracks) return cachedTracks;
 
+  // Try merged multi-Supabase catalog first (falls back to seed internally)
+  const { tracks } = await getMergedCatalog();
+  if (tracks.length > 0) {
+    cachedTracks = tracks;
+    return cachedTracks;
+  }
+
+  // Final fallback: seedData
   if (!isFirebaseConfigured) {
     cachedTracks = SEED_TRACKS;
     return cachedTracks;
   }
   try {
     const snap = await getDocs(query(collection(db, 'audio'), where('published', '==', true)));
-    if (snap.empty) {
-      cachedTracks = SEED_TRACKS;
-    } else {
-      cachedTracks = snap.docs.map((d) => ({ id: d.id, ...d.data() } as AudioTrack));
-    }
+    cachedTracks = snap.empty
+      ? SEED_TRACKS
+      : snap.docs.map((d) => ({ id: d.id, ...d.data() } as AudioTrack));
     return cachedTracks;
   } catch (err) {
     console.warn('Firestore fetch tracks failed, using seed data fallback:', err);
@@ -77,17 +84,23 @@ export async function getTrackById(id: string): Promise<AudioTrack | null> {
 export async function getAllSeries(): Promise<Series[]> {
   if (cachedSeries) return cachedSeries;
 
+  // Try merged multi-Supabase catalog first
+  const { series } = await getMergedCatalog();
+  if (series.length > 0) {
+    cachedSeries = series;
+    return cachedSeries;
+  }
+
+  // Final fallback: seedData
   if (!isFirebaseConfigured) {
     cachedSeries = SEED_SERIES;
     return cachedSeries;
   }
   try {
     const snap = await getDocs(query(collection(db, 'series'), where('published', '==', true)));
-    if (snap.empty) {
-      cachedSeries = SEED_SERIES;
-    } else {
-      cachedSeries = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Series));
-    }
+    cachedSeries = snap.empty
+      ? SEED_SERIES
+      : snap.docs.map((d) => ({ id: d.id, ...d.data() } as Series));
     return cachedSeries;
   } catch (err) {
     console.warn('Firestore fetch series failed, using fallback:', err);

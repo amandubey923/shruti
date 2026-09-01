@@ -47,7 +47,7 @@ export function ThemeToggle({ className = '', variant = 'segmented' }: ThemeTogg
         aria-pressed={theme === 'light'}
       >
         <Sun className={`w-3.5 h-3.5 ${theme === 'light' ? 'text-accent' : ''}`} />
-        <span>Light</span>
+        <span className="hidden sm:inline">Light</span>
       </button>
 
       <button
@@ -61,7 +61,7 @@ export function ThemeToggle({ className = '', variant = 'segmented' }: ThemeTogg
         aria-pressed={theme === 'dark'}
       >
         <Moon className={`w-3.5 h-3.5 ${theme === 'dark' ? 'text-accent' : ''}`} />
-        <span>Dark</span>
+        <span className="hidden sm:inline">Dark</span>
       </button>
     </div>
   );
