@@ -24,6 +24,7 @@ import {
   removeTrackFromPlaylist,
   getUserHistory,
   saveUserProgress,
+  normalizeSeriesId,
 } from '@/lib/firestore';
 
 interface LibraryContextType {
@@ -103,6 +104,23 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           console.warn('Guest history merge error', e);
         }
 
+        // Sync guest saved series to user account
+        try {
+          const localSeriesRaw = localStorage.getItem(LOCAL_SAVED_SERIES_KEY);
+          if (localSeriesRaw) {
+            const localSeries: string[] = JSON.parse(localSeriesRaw);
+            const newSeriesToSync = localSeries.filter((id) => !cloudSeries.includes(id));
+            for (const sId of newSeriesToSync) {
+              await toggleSavedSeries(user.uid, sId, true);
+              cloudSeries.push(sId);
+            }
+          }
+        } catch (e) {
+          console.warn('Guest saved series merge error', e);
+        }
+
+        const dedupedSeries = Array.from(new Set(cloudSeries));
+
         // Mirror cloud history into local progress store so audio resume works seamlessly
         try {
           const mergedMap: Record<string, PlaybackProgress> = {};
@@ -114,12 +132,17 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(LOCAL_PROGRESS_KEY, JSON.stringify(mergedMap));
         } catch {}
 
+        // Mirror cloud saved series to local storage for instant offline/reload access
+        try {
+          localStorage.setItem(LOCAL_SAVED_SERIES_KEY, JSON.stringify(dedupedSeries));
+        } catch {}
+
         cloudHistory.sort(
           (a, b) => new Date(b.lastPlayedAt).getTime() - new Date(a.lastPlayedAt).getTime()
         );
 
         setFavorites(Array.from(new Set(cloudFavs)));
-        setSavedSeries(cloudSeries);
+        setSavedSeries(dedupedSeries);
         setPlaylists(cloudPlaylists);
         setHistory(cloudHistory);
       } catch (err) {
@@ -193,24 +216,49 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const isFavorite = useCallback((audioId: string) => favoriteSet.has(audioId), [favoriteSet]);
 
   const toggleSaveSeries = useCallback(async (seriesId: string) => {
-    setSavedSeries((prev) => {
-      const isCurrentlySaved = prev.includes(seriesId);
-      const updated = isCurrentlySaved
-        ? prev.filter((id) => id !== seriesId)
-        : [...prev, seriesId];
+    if (!seriesId) return;
+    const cleanId = seriesId.trim();
+    const normId = normalizeSeriesId(cleanId);
 
+    setSavedSeries((prev) => {
+      const isCurrentlySaved =
+        prev.includes(cleanId) ||
+        prev.includes(normId) ||
+        prev.some((id) => normalizeSeriesId(id) === normId);
+
+      const updated = isCurrentlySaved
+        ? prev.filter((id) => id !== cleanId && id !== normId && normalizeSeriesId(id) !== normId)
+        : Array.from(new Set([...prev, cleanId]));
+
+      // Always write to localStorage instantly (for offline-first & page refresh preservation)
+      try {
+        localStorage.setItem(LOCAL_SAVED_SERIES_KEY, JSON.stringify(updated));
+      } catch {}
+
+      // If user is logged in, sync with Firestore in background
       if (user?.uid) {
-        toggleSavedSeries(user.uid, seriesId, !isCurrentlySaved);
-      } else {
-        try {
-          localStorage.setItem(LOCAL_SAVED_SERIES_KEY, JSON.stringify(updated));
-        } catch {}
+        toggleSavedSeries(user.uid, cleanId, !isCurrentlySaved).catch((err) => {
+          console.warn('Firestore toggleSavedSeries error:', err);
+        });
       }
+
       return updated;
     });
   }, [user?.uid]);
 
-  const isSeriesSaved = useCallback((seriesId: string) => savedSeriesSet.has(seriesId), [savedSeriesSet]);
+  const isSeriesSaved = useCallback(
+    (seriesId: string) => {
+      if (!seriesId) return false;
+      const cleanId = seriesId.trim();
+      const normId = normalizeSeriesId(cleanId);
+      return (
+        savedSeriesSet.has(cleanId) ||
+        savedSeriesSet.has(normId) ||
+        Array.from(savedSeriesSet).some((id) => normalizeSeriesId(id) === normId)
+      );
+    },
+    [savedSeriesSet]
+  );
 
   const createPlaylist = useCallback(async (name: string, description?: string): Promise<Playlist> => {
     const newPlaylist = await createUserPlaylist(user?.uid || 'guest', name, description);

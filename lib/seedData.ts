@@ -195,10 +195,13 @@ const nirvanTracks: AudioTrack[] = Array.from({ length: 4 }, (_, i) => {
   };
 });
 
-// 6. OSHO - ADHYATAM UPANISHAD (3 Verified Parts in Storage)
-const adhyatamDurations = [5299, 4431, 5194];
+// 6. OSHO - ADHYATAM UPANISHAD (17 Verified Parts in Storage)
+const adhyatamDurations = [
+  5299, 4431, 5194, 4554, 4572, 4559, 4571, 5649,
+  6236, 6073, 5833, 5935, 5773, 4299, 5602, 5716, 5370,
+];
 
-const adhyatamTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
+const adhyatamTracks: AudioTrack[] = Array.from({ length: 17 }, (_, i) => {
   const num = i + 1;
   const p = num.toString().padStart(2, '0');
   return {
@@ -542,8 +545,8 @@ export const SEED_SERIES: Series[] = [
     description:
       'Profound commentary on the Adhyatam Upanishad, exploring the inner spiritual dimension of self-inquiry and the dissolution of duality.',
     coverImage: '/covers/adhyatam-upanishad.svg',
-    totalTracks: 3,
-    totalDuration: adhyatamDurations.reduce((acc, cur) => acc + cur, 0), // 14,924s (~4h 08m)
+    totalTracks: 17,
+    totalDuration: adhyatamDurations.reduce((acc, cur) => acc + cur, 0),
     trackIds: adhyatamTracks.map((t) => t.id),
     category: 'Upanishads',
     tags: ['Upanishads', 'Vedanta', 'Inner Inquiry', 'Hindi'],

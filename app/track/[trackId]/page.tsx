@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -61,21 +61,7 @@ export default function TrackDetailPage() {
   }
 
   if (!track) {
-    return (
-      <div className="py-24 text-center space-y-4 max-w-md mx-auto">
-        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">Recording Not Found</h2>
-        <p className="text-xs sm:text-sm text-foreground-subtle">
-          This recording may have been moved or is not present in storage.
-        </p>
-        <Link
-          href="/explore"
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-accent text-stone-950 font-bold rounded-full text-xs shadow-md"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Explore</span>
-        </Link>
-      </div>
-    );
+    notFound();
   }
 
   const isCurrent = currentTrack?.id === track.id;

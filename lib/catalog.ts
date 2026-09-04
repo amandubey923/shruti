@@ -266,6 +266,38 @@ async function listFolderMp3s(
 
 // ── Track builder ─────────────────────────────────────────────────────────────
 
+const KNOWN_TRACK_DURATIONS: Record<string, number> = {
+  // Osho - Adhyatam Upanishad (17 parts)
+  'adhyatam-upanishad-01': 5299, 'adhyatam-upanishad-02': 4431, 'adhyatam-upanishad-03': 5194,
+  'adhyatam-upanishad-04': 4554, 'adhyatam-upanishad-05': 4572, 'adhyatam-upanishad-06': 4559,
+  'adhyatam-upanishad-07': 4571, 'adhyatam-upanishad-08': 5649, 'adhyatam-upanishad-09': 6236,
+  'adhyatam-upanishad-10': 6073, 'adhyatam-upanishad-11': 5833, 'adhyatam-upanishad-12': 5935,
+  'adhyatam-upanishad-13': 5773, 'adhyatam-upanishad-14': 4299, 'adhyatam-upanishad-15': 5602,
+  'adhyatam-upanishad-16': 5716, 'adhyatam-upanishad-17': 5370,
+  // Osho - Ishavashya Upanishad (13 parts)
+  'ishavashya-upanishad-01': 3488, 'ishavashya-upanishad-02': 2339, 'ishavashya-upanishad-03': 3398,
+  'ishavashya-upanishad-04': 3170, 'ishavashya-upanishad-05': 3268, 'ishavashya-upanishad-06': 2803,
+  'ishavashya-upanishad-07': 3246, 'ishavashya-upanishad-08': 3948, 'ishavashya-upanishad-09': 2999,
+  'ishavashya-upanishad-10': 2643, 'ishavashya-upanishad-11': 3225, 'ishavashya-upanishad-12': 3153,
+  'ishavashya-upanishad-13': 3771,
+  // Osho - Kaivalya Upanishad (15 parts)
+  'kaivalya-upanishad-01': 4265, 'kaivalya-upanishad-02': 4663, 'kaivalya-upanishad-03': 5931,
+  'kaivalya-upanishad-04': 3962, 'kaivalya-upanishad-05': 5592, 'kaivalya-upanishad-06': 5491,
+  'kaivalya-upanishad-07': 5927, 'kaivalya-upanishad-08': 5316, 'kaivalya-upanishad-09': 5372,
+  'kaivalya-upanishad-10': 5562, 'kaivalya-upanishad-11': 3702, 'kaivalya-upanishad-12': 5330,
+  'kaivalya-upanishad-13': 4116, 'kaivalya-upanishad-14': 4245, 'kaivalya-upanishad-15': 2364,
+  // Osho - Mahaveer Vani (35 parts)
+  'mahaveer-vani-01': 5315, 'mahaveer-vani-02': 5214, 'mahaveer-vani-03': 5328, 'mahaveer-vani-04': 5410,
+  'mahaveer-vani-05': 5258, 'mahaveer-vani-06': 5104, 'mahaveer-vani-07': 5352, 'mahaveer-vani-08': 5568,
+  'mahaveer-vani-09': 5430, 'mahaveer-vani-10': 5292, 'mahaveer-vani-11': 5384, 'mahaveer-vani-12': 5502,
+  'mahaveer-vani-13': 5340, 'mahaveer-vani-14': 5466, 'mahaveer-vani-15': 5520, 'mahaveer-vani-16': 5190,
+  'mahaveer-vani-17': 5376, 'mahaveer-vani-18': 5448, 'mahaveer-vani-19': 5280, 'mahaveer-vani-20': 5310,
+  'mahaveer-vani-21': 3309, 'mahaveer-vani-22': 4156, 'mahaveer-vani-23': 3979, 'mahaveer-vani-24': 3587,
+  'mahaveer-vani-25': 4646, 'mahaveer-vani-26': 5686, 'mahaveer-vani-27': 3206, 'mahaveer-vani-28': 3700,
+  'mahaveer-vani-29': 2903, 'mahaveer-vani-30': 3963, 'mahaveer-vani-31': 3296, 'mahaveer-vani-32': 5008,
+  'mahaveer-vani-33': 4363, 'mahaveer-vani-34': 4212, 'mahaveer-vani-35': 3967,
+};
+
 function buildTrack(
   fileName: string,
   folderName: string,
@@ -281,13 +313,18 @@ function buildTrack(
   const partStr = partMatch ? partMatch[1].padStart(2, '0') : baseName.slice(-2);
   const trackId = `${seriesId}-${partStr}`;
 
+  const fallbackDuration =
+    KNOWN_TRACK_DURATIONS[trackId] ||
+    KNOWN_TRACK_DURATIONS[baseName] ||
+    0;
+
   // Check seedData by path or id for metadata enrichment (title, duration, etc.)
   const existing = seedTrackByPath.get(storagePath) || seedTrackById.get(trackId);
   if (existing) {
     return {
       ...existing,
       audioUrl: fullUrl,
-      duration: existing.duration || 0,
+      duration: existing.duration || fallbackDuration || 3600,
     };
   }
 
@@ -295,6 +332,8 @@ function buildTrack(
   const seed = seedSeriesById.get(seriesId);
   const seriesTitle =
     seed?.title ?? folderName.replace(/^OSHO[-_]?/i, '').replace(/[_-]/g, ' ');
+
+  const finalDuration = fallbackDuration > 0 ? fallbackDuration : 3600;
 
   return {
     id: trackId,
@@ -306,7 +345,7 @@ function buildTrack(
     seriesId,
     seriesName: seriesTitle,
     trackNumber: partNum,
-    duration: 0,
+    duration: finalDuration,
     audioUrl: fullUrl,
     coverImage: seed?.coverImage ?? '/covers/default-cover.svg',
     category: seed?.category ?? 'Discourses',

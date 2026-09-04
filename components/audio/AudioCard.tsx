@@ -104,7 +104,7 @@ export function AudioCard({ track }: AudioCardProps) {
         <div className="flex items-center justify-between pt-2 border-t border-background-border/50 text-[11px] text-foreground-subtle font-mono">
           <div className="flex items-center gap-1 font-semibold text-foreground-muted">
             <Clock className="w-3 h-3 text-accent" />
-            <span>{formatDuration(track.duration)}</span>
+            <span>{track.duration > 0 ? formatDuration(track.duration) : '--:--'}</span>
           </div>
           {track.language && (
             <span className="text-[10px] uppercase font-bold text-foreground-subtle px-1.5 py-0.2 rounded bg-background-elevated border border-background-border/50">

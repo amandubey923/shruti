@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -65,21 +65,7 @@ export default function SeriesDetailPage() {
   }
 
   if (!series) {
-    return (
-      <div className="py-24 text-center space-y-4 max-w-md mx-auto">
-        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">Series Not Found</h2>
-        <p className="text-xs sm:text-sm text-foreground-subtle">
-          The requested series may have been archived or is not present in storage.
-        </p>
-        <Link
-          href="/explore"
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-accent text-stone-950 font-bold rounded-full text-xs shadow-md"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Explore</span>
-        </Link>
-      </div>
-    );
+    notFound();
   }
 
   const isSaved = isSeriesSaved(series.id);

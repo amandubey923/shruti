@@ -109,7 +109,7 @@ export async function getAllSeries(): Promise<Series[]> {
   }
 }
 
-function normalizeSeriesId(id: string): string {
+export function normalizeSeriesId(id: string): string {
   const clean = id.toLowerCase().trim();
   if (
     clean.includes('ashtavakra') ||
@@ -261,8 +261,18 @@ export async function toggleUserFavorite(
 export async function getUserSavedSeries(userId: string): Promise<string[]> {
   if (!isFirebaseConfigured || !userId) return [];
   try {
-    const snap = await getDocs(collection(db, 'users', userId, 'saved_series'));
-    return snap.docs.map((d) => d.id);
+    const ids = new Set<string>();
+    const results = await Promise.allSettled([
+      getDocs(collection(db, 'users', userId, 'savedSeries')),
+      getDocs(collection(db, 'users', userId, 'saved_series')),
+    ]);
+
+    for (const res of results) {
+      if (res.status === 'fulfilled' && res.value) {
+        res.value.docs.forEach((d) => ids.add(d.id));
+      }
+    }
+    return Array.from(ids);
   } catch (err) {
     console.warn('Failed to load saved series from Firestore:', err);
     return [];
@@ -274,16 +284,26 @@ export async function toggleSavedSeries(
   seriesId: string,
   isSaved: boolean
 ): Promise<void> {
-  if (!isFirebaseConfigured || !userId) return;
+  if (!isFirebaseConfigured || !userId || !seriesId) return;
   try {
-    const ref = doc(db, 'users', userId, 'saved_series', seriesId);
+    const cleanId = seriesId.trim();
+    const ref1 = doc(db, 'users', userId, 'savedSeries', cleanId);
+    const ref2 = doc(db, 'users', userId, 'saved_series', cleanId);
+
     if (isSaved) {
-      await setDoc(ref, {
-        seriesId,
+      const data = {
+        seriesId: cleanId,
         savedAt: new Date().toISOString(),
-      });
+      };
+      await Promise.allSettled([
+        setDoc(ref1, data),
+        setDoc(ref2, data),
+      ]);
     } else {
-      await deleteDoc(ref);
+      await Promise.allSettled([
+        deleteDoc(ref1),
+        deleteDoc(ref2),
+      ]);
     }
   } catch (err) {
     console.warn('Failed to update saved series in Firestore:', err);

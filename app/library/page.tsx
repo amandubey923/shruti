@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Heart, History, Layers, Bookmark, Sparkles, Compass } from 'lucide-react';
 import { useLibrary } from '@/context/LibraryContext';
-import { getAllTracks, getAllSeries } from '@/lib/firestore';
+import { getAllTracks, getAllSeries, normalizeSeriesId } from '@/lib/firestore';
 import { AudioTrack, Series } from '@/types/audio';
 import { AudioCard } from '@/components/audio/AudioCard';
 import { SeriesCard } from '@/components/audio/SeriesCard';
@@ -18,7 +18,20 @@ export default function LibraryOverviewPage() {
     async function loadData() {
       const [allT, allS] = await Promise.all([getAllTracks(), getAllSeries()]);
       const favs = allT.filter((t) => favorites.includes(t.id));
-      const sSaved = allS.filter((s) => savedSeries.includes(s.id));
+      const sSaved = allS.filter((s) => {
+        const normSId = normalizeSeriesId(s.id);
+        const normSlug = s.slug ? normalizeSeriesId(s.slug) : normSId;
+        return (
+          savedSeries.includes(s.id) ||
+          (s.slug && savedSeries.includes(s.slug)) ||
+          savedSeries.includes(normSId) ||
+          savedSeries.includes(normSlug) ||
+          savedSeries.some((savedId) => {
+            const normSaved = normalizeSeriesId(savedId);
+            return normSaved === normSId || normSaved === normSlug;
+          })
+        );
+      });
       setFavoriteTracks(favs);
       setSavedSeriesList(sSaved);
     }
@@ -59,7 +72,7 @@ export default function LibraryOverviewPage() {
         </Link>
 
         <Link
-          href="/explore?tab=series"
+          href="/library/series"
           className="p-6 rounded-3xl bg-background-card hover:bg-background-elevated border border-background-border hover:border-accent/40 transition-all flex flex-col justify-between group shadow-xs hover:shadow-md"
         >
           <div className="w-12 h-12 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-center mb-6">
