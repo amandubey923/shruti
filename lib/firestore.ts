@@ -109,20 +109,43 @@ export async function getAllSeries(): Promise<Series[]> {
   }
 }
 
+function normalizeSeriesId(id: string): string {
+  const clean = id.toLowerCase().trim();
+  if (
+    clean.includes('ashtavakra') ||
+    clean.includes('mahageeta') ||
+    clean.includes('maha-geeta') ||
+    clean.includes('maha_geeta')
+  ) {
+    return 'ashtavakra-geeta';
+  }
+  if (clean.includes('saravsar') || clean.includes('sarvasar')) {
+    return 'sarvasar-upanishad';
+  }
+  return id;
+}
+
 export async function getSeriesById(id: string): Promise<Series | null> {
+  const normId = normalizeSeriesId(id);
   const all = await getAllSeries();
-  const matched = all.find((s) => s.id === id || s.slug === id);
+  const matched = all.find(
+    (s) => s.id === normId || s.slug === normId || s.id === id || s.slug === id
+  );
   if (matched) return matched;
 
   if (!isFirebaseConfigured) {
-    return SEED_SERIES.find((s) => s.id === id || s.slug === id) || null;
+    return (
+      SEED_SERIES.find(
+        (s) => s.id === normId || s.slug === normId || s.id === id || s.slug === id
+      ) || null
+    );
   }
   try {
-    const snap = await getDoc(doc(db, 'series', id));
+    const snap = await getDoc(doc(db, 'series', normId));
     if (snap.exists()) {
       return { id: snap.id, ...snap.data() } as Series;
     }
-    const qSnap = await getDocs(query(collection(db, 'series'), where('slug', '==', id), limit(1)));
+    const qSnap = await getDocs(query(collection(db, 'series'), where('slug', '==', normId), limit(1)));
     if (!qSnap.empty) {
       const d = qSnap.docs[0];
       return { id: d.id, ...d.data() } as Series;
@@ -135,9 +158,10 @@ export async function getSeriesById(id: string): Promise<Series | null> {
 }
 
 export async function getTracksForSeries(seriesId: string): Promise<AudioTrack[]> {
+  const normId = normalizeSeriesId(seriesId);
   const all = await getAllTracks();
   return all
-    .filter((t) => t.seriesId === seriesId)
+    .filter((t) => t.seriesId === normId || t.seriesId === seriesId)
     .sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
 }
 

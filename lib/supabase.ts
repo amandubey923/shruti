@@ -1,3 +1,7 @@
+if (typeof globalThis !== 'undefined' && typeof (globalThis as any).WebSocket === 'undefined') {
+  (globalThis as any).WebSocket = class DummyWebSocket {};
+}
+
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export const AUDIO_BUCKET = 'audio';
@@ -80,7 +84,22 @@ export const supabase2: SupabaseClient = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } }
 );
 
-// ── All configured sources (extensible — add supabase3 etc. here later) ──────
+// ── Tertiary Supabase ─────────────────────────────────────────────────────────
+const cred3 = resolveCredentials(
+  process.env.NEXT_PUBLIC_SUPABASE_3_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_3_PUBLISHABLE_KEY
+);
+
+export const isSupabase3Configured = cred3.isConfigured;
+export const supabaseUrl3 = cred3.url;
+
+export const supabase3: SupabaseClient = createClient(
+  cred3.url || 'https://placeholder3.supabase.co',
+  cred3.publishableKey || 'placeholder-anon-key-3',
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
+
+// ── All configured sources ───────────────────────────────────────────────────
 export const supabaseSources: Array<{
   client: SupabaseClient;
   url: string;
@@ -90,7 +109,30 @@ export const supabaseSources: Array<{
 }> = [
   { client: supabase,  url: cred1.url, publishableKey: cred1.publishableKey, isConfigured: cred1.isConfigured, index: 1 },
   { client: supabase2, url: cred2.url, publishableKey: cred2.publishableKey, isConfigured: cred2.isConfigured, index: 2 },
+  { client: supabase3, url: cred3.url, publishableKey: cred3.publishableKey, isConfigured: cred3.isConfigured, index: 3 },
 ];
+
+// Dynamically discover any higher sources (NEXT_PUBLIC_SUPABASE_4_URL .. 10)
+for (let i = 4; i <= 10; i++) {
+  const uEnv = process.env[`NEXT_PUBLIC_SUPABASE_${i}_URL`];
+  const kEnv = process.env[`NEXT_PUBLIC_SUPABASE_${i}_PUBLISHABLE_KEY`];
+  if (uEnv && kEnv) {
+    const credN = resolveCredentials(uEnv, kEnv);
+    if (credN.isConfigured) {
+      const clientN = createClient(credN.url, credN.publishableKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      supabaseSources.push({
+        client: clientN,
+        url: credN.url,
+        publishableKey: credN.publishableKey,
+        isConfigured: true,
+        index: i,
+      });
+    }
+  }
+}
+
 
 /**
  * Generate a public streaming URL for an audio file in a specific Supabase project.
@@ -100,14 +142,49 @@ export const supabaseSources: Array<{
  */
 export function getSupabaseAudioUrl(
   pathOrUrl: string,
-  projectUrl: string = supabaseUrl,
+  projectUrl?: string,
   bucket: string = AUDIO_BUCKET
 ): string {
   if (!pathOrUrl) return '';
   if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) return pathOrUrl;
   const cleanPath = pathOrUrl.replace(/^\/+/, '');
-  if (projectUrl) {
-    const base = projectUrl.replace(/\/+$/, '');
+
+  let baseProjectUrl = projectUrl;
+  if (!baseProjectUrl) {
+    const lower = cleanPath.toLowerCase();
+    if (
+      lower.includes('ashtavakra') ||
+      lower.includes('maha_geeta') ||
+      lower.includes('mahageeta')
+    ) {
+      baseProjectUrl = supabaseUrl3 || supabaseUrl;
+    } else if (lower.includes('saravsar') || lower.includes('sarvasar')) {
+      const match = cleanPath.match(/[_-](\d+)\.mp3$/i);
+      const partNum = match ? parseInt(match[1], 10) : 0;
+      baseProjectUrl = partNum > 4 ? (supabaseUrl3 || supabaseUrl) : supabaseUrl;
+    } else if (lower.includes('mare_he_jogi_maro')) {
+      const match = cleanPath.match(/[_-](\d+)\.mp3$/i);
+      const partNum = match ? parseInt(match[1], 10) : 0;
+      baseProjectUrl = partNum > 3 ? (supabaseUrl3 || supabaseUrl) : supabaseUrl;
+    } else if (
+      lower.includes('adhyatam') ||
+      lower.includes('ishavashya') ||
+      lower.includes('kaivalya') ||
+      lower.includes('mahaveer')
+    ) {
+      const match = cleanPath.match(/[_-](\d+)\.mp3$/i);
+      const partNum = match ? parseInt(match[1], 10) : 0;
+      const isS1 =
+        (lower.includes('mahaveer') && partNum <= 14) ||
+        (!lower.includes('mahaveer') && partNum <= 3);
+      baseProjectUrl = isS1 ? supabaseUrl : (supabaseUrl2 || supabaseUrl);
+    } else {
+      baseProjectUrl = supabaseUrl;
+    }
+  }
+
+  if (baseProjectUrl) {
+    const base = baseProjectUrl.replace(/\/+$/, '');
     return `${base}/storage/v1/object/public/${bucket}/${cleanPath}`;
   }
   return cleanPath;
@@ -121,6 +198,11 @@ export function getSupabaseAudioUrl1(pathOrUrl: string, bucket = AUDIO_BUCKET): 
 /** Convenience: secondary Supabase audio URL */
 export function getSupabaseAudioUrl2(pathOrUrl: string, bucket = AUDIO_BUCKET): string {
   return getSupabaseAudioUrl(pathOrUrl, supabaseUrl2, bucket);
+}
+
+/** Convenience: tertiary Supabase audio URL */
+export function getSupabaseAudioUrl3(pathOrUrl: string, bucket = AUDIO_BUCKET): string {
+  return getSupabaseAudioUrl(pathOrUrl, supabaseUrl3, bucket);
 }
 
 /**

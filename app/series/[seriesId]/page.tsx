@@ -38,8 +38,17 @@ export default function SeriesDetailPage() {
       if (!seriesId) return;
       const s = await getSeriesById(seriesId);
       if (s) {
-        setSeries(s);
         const t = await getTracksForSeries(s.id);
+        if (t.length > 0) {
+          if (s.totalTracks !== t.length) {
+            s.totalTracks = t.length;
+          }
+          const sumDur = t.reduce((acc, cur) => acc + (cur.duration || 0), 0);
+          if (sumDur > 0 && sumDur > (s.totalDuration || 0)) {
+            s.totalDuration = sumDur;
+          }
+        }
+        setSeries(s);
         setTracks(t);
       }
       setLoading(false);
@@ -261,6 +270,15 @@ export default function SeriesDetailPage() {
                 track={track}
                 index={idx}
                 onPlay={() => playSeriesAll(tracks, idx)}
+                onDurationLoaded={(trackId, dur) => {
+                  setTracks((prev) =>
+                    prev.map((item) =>
+                      item.id === trackId && (!item.duration || item.duration <= 0)
+                        ? { ...item, duration: dur }
+                        : item
+                    )
+                  );
+                }}
               />
             ))}
           </div>

@@ -22,9 +22,15 @@ import { supabaseSources, getSupabaseAudioUrl, AUDIO_BUCKET } from './supabase';
 import { SEED_TRACKS, SEED_SERIES } from './seedData';
 
 // ── Seed lookups: metadata enrichment ─────────────────────────────────────────
-const seedTrackByPath = new Map<string, AudioTrack>(
-  SEED_TRACKS.map((t) => [t.audioUrl, t])
-);
+const seedTrackByPath = new Map<string, AudioTrack>();
+const seedTrackById = new Map<string, AudioTrack>();
+for (const t of SEED_TRACKS) {
+  seedTrackById.set(t.id, t);
+  seedTrackByPath.set(t.audioUrl, t);
+  const rel = t.audioUrl.replace(/^https?:\/\/[^\/]+\/storage\/v1\/object\/public\/[^\/]+\//, '');
+  seedTrackByPath.set(rel, t);
+}
+
 const seedSeriesById = new Map<string, Series>(
   SEED_SERIES.map((s) => [s.id, s])
 );
@@ -35,6 +41,7 @@ const KNOWN_FOLDER_TO_SERIES_ID: Record<string, string> = {
   'OSHO-Adhyatam_Upanishad':   'adhyatam-upanishad',
   'OSHO-Asambhav_Kranti':      'asambhav-kranti',
   'OSHO-Bhaj Govindam':        'bhaj-govindam',
+  'OSHO-Bhaj_Govindam':        'bhaj-govindam',
   'OSHO-Ek_Omkar_Satnam':      'ek-omkar-satnam',
   'OSHO-Ishavashya_Upanishad': 'ishavashya-upanishad',
   'OSHO-Kaivalya_Upanishad':   'kaivalya-upanishad',
@@ -42,17 +49,41 @@ const KNOWN_FOLDER_TO_SERIES_ID: Record<string, string> = {
   'OSHO-Mare_He_Jogi_Maro':    'mare-he-jogi-maro',
   'OSHO-Nirvan_Upanishad':     'nirvan-upanishad',
   'OSHO-Sarvasar_Upanishad':   'sarvasar-upanishad',
+  'OSHO-Saravsar_Upanishad':   'sarvasar-upanishad',
+  'OSHO-Sarvsar_Upanishad':    'sarvasar-upanishad',
   'OSHO_ashtavakra-geeta':     'ashtavakra-geeta',
+  'OSHO-ashtavakra_mahageeta': 'ashtavakra-geeta',
+  'OSHO-ashtavakra-mahageeta': 'ashtavakra-geeta',
+  'OSHO-Ashtavakra_Geeta':     'ashtavakra-geeta',
+  'OSHO-Maha_Geeta':           'ashtavakra-geeta',
+  'OSHO-Mahageeta':            'ashtavakra-geeta',
+  'ashtavakra-geeta':          'ashtavakra-geeta',
+  'ashtavakra-mahageeta':      'ashtavakra-geeta',
+  'mahageeta':                 'ashtavakra-geeta',
+  'maha-geeta':                'ashtavakra-geeta',
 };
 
 function folderNameToSeriesId(folderName: string): string {
-  return folderName
+  const clean = folderName
     .replace(/^OSHO[-_]?/i, '')
     .toLowerCase()
     .replace(/[\s_]+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
+
+  if (
+    clean.includes('ashtavakra') ||
+    clean.includes('mahageeta') ||
+    clean.includes('maha-geeta') ||
+    clean.includes('maha_geeta')
+  ) {
+    return 'ashtavakra-geeta';
+  }
+  if (clean.includes('saravsar') || clean.includes('sarvasar')) {
+    return 'sarvasar-upanishad';
+  }
+  return clean;
 }
 
 function getSeriesId(folderName: string): string {
@@ -154,6 +185,30 @@ async function listAllItemsPaginated(src: Src, prefix: string): Promise<RawItem[
   return collected;
 }
 
+// ── Candidate file prefixes generator for probing ─────────────────────────────
+
+function getCandidateFilePrefixes(folderName: string): string[] {
+  const prefixes: string[] = [`${folderName}_`];
+  const lower = folderName.toLowerCase();
+  if (lower.includes('ashtavakra')) {
+    prefixes.push('OSHO-Maha_Geeta_', 'OSHO-ashtavakra_mahageeta_', 'OSHO_ashtavakra-geeta_');
+  }
+  if (lower.includes('saravsar') || lower.includes('sarvasar')) {
+    prefixes.push('OSHO-Saravsar_Upanishad_', 'OSHO-Sarvasar_Upanishad_');
+  }
+  if (lower.includes('mare_he_jogi_maro')) {
+    prefixes.push('OSHO-Mare_He_Jogi_Maro_');
+  }
+  if (folderName === 'krishna-smriti') {
+    prefixes.push('OSHO-Krishna_Smriti_', 'krishna-smriti-');
+  }
+  const stripped = folderName.replace(/^OSHO[-_]/i, '');
+  if (stripped !== folderName) {
+    prefixes.push(`${stripped}_`);
+  }
+  return Array.from(new Set(prefixes));
+}
+
 // ── Per-folder MP3 lister ─────────────────────────────────────────────────────
 
 async function listFolderMp3s(
@@ -161,12 +216,52 @@ async function listFolderMp3s(
   folderPath: string
 ): Promise<Array<{ name: string; url: string }>> {
   const items = await listAllItemsPaginated(src, folderPath);
-  return items
-    .filter((f) => f.name?.toLowerCase().endsWith('.mp3'))
-    .map((f) => ({
-      name: f.name,
-      url: getSupabaseAudioUrl(`${folderPath}/${f.name}`, src.url),
-    }));
+  if (items.length > 0) {
+    return items
+      .filter((f) => f.name?.toLowerCase().endsWith('.mp3'))
+      .map((f) => ({
+        name: f.name,
+        url: getSupabaseAudioUrl(`${folderPath}/${f.name}`, src.url),
+      }));
+  }
+
+  // Fallback: If storage list API returns 0 items (e.g. RLS blocks listing on public buckets),
+  // probe known audio naming conventions via fast parallel HEAD requests
+  const folderName = folderPath.replace(/^osho\//i, '');
+  const candidatePrefixes = getCandidateFilePrefixes(folderName);
+  const found: Array<{ name: string; url: string }> = [];
+
+  let maxParts = 25;
+  const lower = folderName.toLowerCase();
+  if (lower.includes('ashtavakra')) maxParts = 20;
+  else if (lower.includes('mahaveer')) maxParts = 35;
+  else if (lower.includes('saravsar') || lower.includes('sarvasar')) maxParts = 15;
+  else if (lower.includes('mare_he')) maxParts = 25;
+
+  const probePromises: Promise<{ name: string; url: string } | null>[] = [];
+
+  for (const prefix of candidatePrefixes) {
+    for (let part = 1; part <= maxParts; part++) {
+      const pStr = String(part).padStart(2, '0');
+      const filename = `${prefix}${pStr}.mp3`;
+      const fullUrl = getSupabaseAudioUrl(`${folderPath}/${filename}`, src.url);
+
+      probePromises.push(
+        fetch(fullUrl, { method: 'HEAD' })
+          .then((res) => (res.status === 200 ? { name: filename, url: fullUrl } : null))
+          .catch(() => null)
+      );
+    }
+  }
+
+  const results = await Promise.all(probePromises);
+  for (const r of results) {
+    if (r && !found.some((f) => f.name === r.name)) {
+      found.push(r);
+    }
+  }
+
+  return found;
 }
 
 // ── Track builder ─────────────────────────────────────────────────────────────
@@ -179,18 +274,25 @@ function buildTrack(
 ): AudioTrack | null {
   if (!fileName.toLowerCase().endsWith('.mp3')) return null;
 
-  // Check seedData by path for metadata enrichment (title, duration, etc.)
   const storagePath = `osho/${folderName}/${fileName}`;
-  const existing = seedTrackByPath.get(storagePath);
-  if (existing) return { ...existing, audioUrl: fullUrl };
-
-  // Generate metadata for tracks not in seedData
-  const seed = seedSeriesById.get(seriesId);
   const baseName = fileName.replace(/\.mp3$/i, '');
   const partMatch = baseName.match(/[_-]?(\d+)$/);
   const partNum = partMatch ? parseInt(partMatch[1], 10) : 0;
   const partStr = partMatch ? partMatch[1].padStart(2, '0') : baseName.slice(-2);
   const trackId = `${seriesId}-${partStr}`;
+
+  // Check seedData by path or id for metadata enrichment (title, duration, etc.)
+  const existing = seedTrackByPath.get(storagePath) || seedTrackById.get(trackId);
+  if (existing) {
+    return {
+      ...existing,
+      audioUrl: fullUrl,
+      duration: existing.duration || 0,
+    };
+  }
+
+  // Generate metadata for tracks not in seedData
+  const seed = seedSeriesById.get(seriesId);
   const seriesTitle =
     seed?.title ?? folderName.replace(/^OSHO[-_]?/i, '').replace(/[_-]/g, ' ');
 
@@ -223,6 +325,9 @@ function buildTrack(
 function buildSeries(seriesId: string, seriesTracks: AudioTrack[]): Series {
   const seed = seedSeriesById.get(seriesId);
   const title = seed?.title ?? seriesTracks[0]?.seriesName ?? seriesId;
+  const sumDuration = seriesTracks.reduce((sum, t) => sum + (t.duration ?? 0), 0);
+  const totalDuration = sumDuration > 0 ? sumDuration : (seed?.totalDuration ?? 0);
+
   return {
     id: seriesId,
     title,
@@ -233,7 +338,7 @@ function buildSeries(seriesId: string, seriesTracks: AudioTrack[]): Series {
     description: seed?.description ?? `Spoken audio discourses: ${title}.`,
     coverImage: seed?.coverImage ?? '/covers/default-cover.svg',
     totalTracks: seriesTracks.length,
-    totalDuration: seriesTracks.reduce((sum, t) => sum + (t.duration ?? 0), 0),
+    totalDuration,
     trackIds: seriesTracks.map((t) => t.id),
     category: seed?.category ?? 'Discourses',
     tags: seed?.tags ?? ['Osho', 'Hindi'],
@@ -263,8 +368,26 @@ async function scanSource(src: Src): Promise<SourceScanResult> {
     )
     .map((i) => i.name);
 
-  // 2. Union with known folders so every series folder is checked
-  const allFolders = new Set([...dynamicFolders, ...Object.keys(KNOWN_FOLDER_TO_SERIES_ID)]);
+  // 2. Target candidate folders based on source for high performance
+  let candidateFolders: string[];
+  if (src.index === 3) {
+    candidateFolders = [
+      'OSHO-ashtavakra_mahageeta',
+      'OSHO-Saravsar_Upanishad',
+      'OSHO-Mare_He_Jogi_Maro',
+    ];
+  } else if (src.index === 2) {
+    candidateFolders = [
+      'OSHO-Adhyatam_Upanishad',
+      'OSHO-Ishavashya_Upanishad',
+      'OSHO-Kaivalya_Upanishad',
+      'OSHO-Mahaveer_Vani',
+    ];
+  } else {
+    candidateFolders = Object.keys(KNOWN_FOLDER_TO_SERIES_ID);
+  }
+
+  const allFolders = new Set([...dynamicFolders, ...candidateFolders]);
 
   const tracks: AudioTrack[] = [];
   const folderCounts: Record<string, number> = {};
@@ -333,16 +456,10 @@ async function buildCatalog(): Promise<{ tracks: AudioTrack[]; series: Series[] 
   );
 
   // Concise diagnostics requested by user
-  const res1 = sourceResults.find((r) => r.srcIndex === 1);
-  const res2 = sourceResults.find((r) => r.srcIndex === 2);
-  if (res1) {
-    console.log(`[catalog] source #1 folders: ${Object.keys(res1.folderCounts).length}`);
-    console.log(`[catalog] source #1 tracks: ${res1.tracks.length}`);
-  }
-  if (res2) {
-    console.log(`[catalog] source #2 folders: ${Object.keys(res2.folderCounts).length}`);
-    console.log(`[catalog] source #2 tracks: ${res2.tracks.length}`);
-  }
+  sourceResults.forEach((r) => {
+    console.log(`[catalog] source #${r.srcIndex} folders: ${Object.keys(r.folderCounts).length}`);
+    console.log(`[catalog] source #${r.srcIndex} tracks: ${r.tracks.length}`);
+  });
 
   // ── Step 2: Merge all source results — source order preserved (#1 wins dedup) ──
   const trackMap = new Map<string, AudioTrack>();

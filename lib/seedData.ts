@@ -117,12 +117,30 @@ const mahaveerTracks: AudioTrack[] = Array.from({ length: 20 }, (_, i) => {
   };
 });
 
-// 4. OSHO - MARE HE JOGI MARO (3 Verified Parts in Storage)
-const mareHeJogiDurations = [5480, 5295, 5120];
+// 4. OSHO - MARE HE JOGI MARO (16 Verified Parts in Storage)
+const mareHeJogiPartNumbers = [1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, 19, 20];
+const mareHeJogiDurations = [
+  5480, // Part 01 (~1h 31m 20s)
+  5295, // Part 02 (~1h 28m 15s)
+  5120, // Part 03 (~1h 25m 20s)
+  4949, // Part 04 (~1h 22m 29s)
+  5883, // Part 05 (~1h 38m 03s)
+  5254, // Part 06 (~1h 27m 34s)
+  6325, // Part 09 (~1h 45m 25s)
+  6105, // Part 10 (~1h 41m 45s)
+  5520, // Part 11 (~1h 32m 00s)
+  5531, // Part 12 (~1h 32m 11s)
+  6018, // Part 14 (~1h 40m 18s)
+  5485, // Part 15 (~1h 31m 25s)
+  6208, // Part 16 (~1h 43m 28s)
+  5873, // Part 17 (~1h 37m 53s)
+  4904, // Part 19 (~1h 21m 44s)
+  5217, // Part 20 (~1h 26m 57s)
+];
 
-const mareHeJogiTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
-  const num = i + 1;
+const mareHeJogiTracks: AudioTrack[] = mareHeJogiPartNumbers.map((num, i) => {
   const p = num.toString().padStart(2, '0');
+  const baseOrigin = num <= 3 ? 'https://uzrikhpzouvsvzwcbgcm.supabase.co' : 'https://jekriqugkxjsuqdxpkwf.supabase.co';
   return {
     id: `mare-he-jogi-maro-${p}`,
     title: `Mare He Jogi Maro - Part ${p}`,
@@ -134,7 +152,7 @@ const mareHeJogiTracks: AudioTrack[] = Array.from({ length: 3 }, (_, i) => {
     seriesName: 'Mare He Jogi Maro',
     trackNumber: num,
     duration: mareHeJogiDurations[i],
-    audioUrl: `osho/OSHO-Mare_He_Jogi_Maro/OSHO-Mare_He_Jogi_Maro_${p}.mp3`,
+    audioUrl: `${baseOrigin}/storage/v1/object/public/audio/osho/OSHO-Mare_He_Jogi_Maro/OSHO-Mare_He_Jogi_Maro_${p}.mp3`,
     coverImage: '/covers/mare-he-jogi-maro.svg',
     category: 'Discourses',
     tags: ['Gorakh', 'Nath', 'Yoga', 'Mysticism', 'Hindi'],
@@ -327,7 +345,68 @@ const bhajGovindamTracks: AudioTrack[] = Array.from({ length: 10 }, (_, i) => {
   };
 });
 
-// ALL VERIFIED SPOKEN TRACKS (93 Real MP3 Tracks)
+// 11. OSHO - ASHTAVAKRA GEETA / MAHA GEETA (15 Verified Parts in Storage)
+const ashtavakraDurations = [4950, 5941, 4054, 4638, 3487, 4734, 3449, 4528, 4102, 4619, 4896, 4912, 3998, 4375, 4365];
+
+const ashtavakraTracks: AudioTrack[] = Array.from({ length: 15 }, (_, i) => {
+  const num = i + 1;
+  const p = num.toString().padStart(2, '0');
+  return {
+    id: `ashtavakra-geeta-${p}`,
+    title: `Maha Geeta (Ashtavakra Geeta) - Part ${p}`,
+    subtitle: `Discourse ${num}`,
+    slug: `ashtavakra-geeta-${p}`,
+    artistId: 'osho',
+    artistName: 'Osho',
+    seriesId: 'ashtavakra-geeta',
+    seriesName: 'Ashtavakra Geeta (Maha Geeta)',
+    trackNumber: num,
+    duration: ashtavakraDurations[i],
+    audioUrl: `https://jekriqugkxjsuqdxpkwf.supabase.co/storage/v1/object/public/audio/osho/OSHO-ashtavakra_mahageeta/OSHO-Maha_Geeta_${p}.mp3`,
+    coverImage: '/covers/ashtavakra-geeta.svg',
+    category: 'Discourses',
+    tags: ['Ashtavakra', 'Mahageeta', 'Maha Geeta', 'Advaita', 'Non-Duality', 'Freedom', 'Hindi'],
+    description: `Osho's commentary on Ashtavakra Geeta (Maha Geeta): The Song of Ultimate Freedom - Part ${p}.`,
+    isDownloadable: true,
+    published: true,
+    releaseDate: '1976-09-01',
+    language: 'Hindi',
+    playCount: 950 - i * 15,
+  };
+});
+
+// 12. OSHO - SARVASAR UPANISHAD (10 Verified Parts in Storage)
+const sarvasarDurations = [4561, 4211, 2622, 2859, 2850, 3898, 5158, 4011, 4488, 5951];
+
+const sarvasarTracks: AudioTrack[] = Array.from({ length: 10 }, (_, i) => {
+  const num = i + 1;
+  const p = num.toString().padStart(2, '0');
+  const baseOrigin = num <= 4 ? 'https://uzrikhpzouvsvzwcbgcm.supabase.co' : 'https://jekriqugkxjsuqdxpkwf.supabase.co';
+  return {
+    id: `sarvasar-upanishad-${p}`,
+    title: `Sarvasar Upanishad - Part ${p}`,
+    subtitle: `Discourse ${num}`,
+    slug: `sarvasar-upanishad-${p}`,
+    artistId: 'osho',
+    artistName: 'Osho',
+    seriesId: 'sarvasar-upanishad',
+    seriesName: 'Sarvasar Upanishad',
+    trackNumber: num,
+    duration: sarvasarDurations[i],
+    audioUrl: `${baseOrigin}/storage/v1/object/public/audio/osho/OSHO-Saravsar_Upanishad/OSHO-Saravsar_Upanishad_${p}.mp3`,
+    coverImage: '/covers/sarvasar-upanishad.svg',
+    category: 'Upanishads',
+    tags: ['Upanishads', 'Vedanta', 'Brahman', 'Essence', 'Hindi'],
+    description: `Commentaries on the Sarvasar Upanishad - Part ${p}.`,
+    isDownloadable: true,
+    published: true,
+    releaseDate: '1973-05-01',
+    language: 'Hindi',
+    playCount: 480 - i * 10,
+  };
+});
+
+// ALL VERIFIED SPOKEN TRACKS
 export const SEED_TRACKS: AudioTrack[] = [
   ...krishnaTracks,
   ...ekOmkarTracks,
@@ -339,6 +418,8 @@ export const SEED_TRACKS: AudioTrack[] = [
   ...ishavashyaTracks,
   ...kaivalyaTracks,
   ...bhajGovindamTracks,
+  ...sarvasarTracks,
+  ...ashtavakraTracks,
 ];
 
 // ALL 12 REAL SERIES IN SHRUTI ARCHIVE
@@ -418,15 +499,15 @@ export const SEED_SERIES: Series[] = [
   {
     id: 'mare-he-jogi-maro',
     title: 'Mare He Jogi Maro',
-    subtitle: '3 Discourse Recordings',
+    subtitle: '16 Discourse Recordings',
     slug: 'mare-he-jogi-maro',
     artistId: 'osho',
     artistName: 'Osho',
     description:
       'Discourses on Gorakhnath: An exploration into the esoteric mystery of dying into meditation to be reborn into the eternal.',
     coverImage: '/covers/mare-he-jogi-maro.svg',
-    totalTracks: 3,
-    totalDuration: mareHeJogiDurations.reduce((acc, cur) => acc + cur, 0), // 15,895s (~4h 24m)
+    totalTracks: 16,
+    totalDuration: mareHeJogiDurations.reduce((acc, cur) => acc + cur, 0), // 89,167s (~24h 46m)
     trackIds: mareHeJogiTracks.map((t) => t.id),
     category: 'Discourses',
     tags: ['Gorakh', 'Nath', 'Yoga', 'Mysticism', 'Hindi'],
@@ -526,16 +607,16 @@ export const SEED_SERIES: Series[] = [
   {
     id: 'sarvasar-upanishad',
     title: 'Sarvasar Upanishad',
-    subtitle: 'Upanishadic Commentary',
+    subtitle: '10 Discourse Recordings',
     slug: 'sarvasar-upanishad',
     artistId: 'osho',
     artistName: 'Osho',
     description:
       'Commentaries on the Sarvasar Upanishad — extracting the core essence of Upanishadic revelation on the nature of Brahman, Atman, and illusion.',
     coverImage: '/covers/sarvasar-upanishad.svg',
-    totalTracks: 0,
-    totalDuration: 0,
-    trackIds: [],
+    totalTracks: 10,
+    totalDuration: sarvasarDurations.reduce((acc, cur) => acc + cur, 0), // 40,609s (~11h 16m)
+    trackIds: sarvasarTracks.map((t) => t.id),
     category: 'Upanishads',
     tags: ['Upanishads', 'Vedanta', 'Brahman', 'Essence', 'Hindi'],
     releaseDate: '1973-05-01',
@@ -544,18 +625,18 @@ export const SEED_SERIES: Series[] = [
   {
     id: 'ashtavakra-geeta',
     title: 'Ashtavakra Geeta',
-    subtitle: 'The Ultimate Freedom',
+    subtitle: '15 Discourse Recordings',
     slug: 'ashtavakra-geeta',
     artistId: 'osho',
     artistName: 'Osho',
     description:
-      'The highest flight of non-dual awareness: direct dialogue on instant enlightenment, freedom from bondage, and pure witnessing consciousness.',
+      'The highest flight of non-dual awareness: Osho\'s revolutionary commentary on Ashtavakra Geeta (also known as Maha Geeta), delivering direct dialogues on instant enlightenment, freedom from bondage, and pure witnessing consciousness.',
     coverImage: '/covers/ashtavakra-geeta.svg',
-    totalTracks: 0,
-    totalDuration: 0,
-    trackIds: [],
+    totalTracks: 15,
+    totalDuration: ashtavakraDurations.reduce((acc, cur) => acc + cur, 0), // 66,048s (~18h 20m)
+    trackIds: ashtavakraTracks.map((t) => t.id),
     category: 'Discourses',
-    tags: ['Ashtavakra', 'Advaita', 'Non-Duality', 'Freedom', 'Hindi'],
+    tags: ['Ashtavakra', 'Mahageeta', 'Maha Geeta', 'Advaita', 'Non-Duality', 'Freedom', 'Hindi'],
     releaseDate: '1976-09-01',
     published: true,
   },

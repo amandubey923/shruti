@@ -28,30 +28,29 @@ export const TrackRow = memo(function TrackRow({ track, index, onPlay, onDuratio
   // ── Lazy real duration ────────────────────────────────────────────────────────
   // If the track already has a known duration (> 0), use it directly.
   // Otherwise subscribe to durationCache which loads preload="metadata" lazily.
+  const resolvedUrl = track.audioUrl ? getSupabaseAudioUrl(track.audioUrl) : '';
   const needsMetadata = !track.duration || track.duration <= 0;
   const [realDuration, setRealDuration] = useState<number>(() =>
-    needsMetadata
-      ? (getCachedDuration(track.audioUrl) ?? 0)
-      : track.duration
+    needsMetadata && resolvedUrl
+      ? (getCachedDuration(resolvedUrl) ?? 0)
+      : (track.duration || 0)
   );
 
   useEffect(() => {
-    if (!needsMetadata) return;
-    const url = track.audioUrl;
-    if (!url) return;
+    if (!needsMetadata || !resolvedUrl) return;
 
     // Subscribe first (never miss the resolution event)
-    const unsub = subscribeDuration(url, (dur: number) => {
+    const unsub = subscribeDuration(resolvedUrl, (dur: number) => {
       setRealDuration(dur);
       onDurationLoaded?.(track.id, dur);
     });
 
     // Trigger loading (no-op if already in flight or resolved)
-    loadDuration(url);
+    loadDuration(resolvedUrl);
 
     return unsub;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track.audioUrl]);
+  }, [resolvedUrl]);
 
   const displayDuration = needsMetadata ? realDuration : track.duration;
 
