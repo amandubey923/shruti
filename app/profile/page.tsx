@@ -9,6 +9,7 @@ import { useLibrary } from '@/context/LibraryContext';
 import { usePlayback } from '@/context/PlaybackContext';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -23,9 +24,13 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto py-8 space-y-8 animate-fade-in">
-      <div className="border-b border-background-border/60 pb-6 flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-background-border pb-6">
         <div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+          <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase tracking-wider mb-1">
+            <User className="w-3.5 h-3.5" />
+            <span>Sanctuary Account</span>
+          </div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-foreground">
             Listener Profile &amp; Preferences
           </h1>
           <p className="text-xs text-foreground-subtle mt-1">
@@ -43,9 +48,14 @@ export default function ProfilePage() {
 
       <div className="p-6 rounded-3xl bg-background-card border border-background-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-accent/20 border-2 border-accent text-accent font-serif text-xl font-bold flex items-center justify-center flex-shrink-0">
-            {profile?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'G'}
-          </div>
+          <UserAvatar
+            photoURL={profile?.photoURL || user?.photoURL}
+            name={profile?.displayName || user?.displayName}
+            email={user?.email}
+            size="xl"
+            fallbackLetter="G"
+            className="ring-2 ring-accent/30 shadow-md"
+          />
           <div>
             <div className="flex items-center gap-2">
               <h2 className="font-serif text-lg font-bold text-foreground">

@@ -15,9 +15,9 @@ import {
   Repeat1,
   Heart,
   ListMusic,
-  Download,
   Share2,
   Maximize2,
+  Moon,
 } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
@@ -25,6 +25,7 @@ import { ProgressBar } from './ProgressBar';
 import { VolumeControl } from './VolumeControl';
 import { SpeedSelector } from './SpeedSelector';
 import { QueueDrawer } from './QueueDrawer';
+import { SleepTimerModal } from './SleepTimerModal';
 import { resolveTrackCover } from '@/lib/utils';
 import { getSupabaseAudioUrl } from '@/lib/supabase';
 
@@ -56,10 +57,13 @@ export function DesktopPlayer() {
     removeFromQueue,
     clearQueue,
     setIsExpandedPlayer,
+    sleepTimer,
+    sleepTimerRemaining,
   } = usePlayback();
 
   const { isFavorite, toggleFavorite } = useLibrary();
   const [showQueue, setShowQueue] = useState(false);
+  const [showSleepTimer, setShowSleepTimer] = useState(false);
   const [copied, setCopied] = useState(false);
 
   if (!currentTrack) return null;
@@ -80,16 +84,6 @@ export function DesktopPlayer() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  };
-
-  const handleDownload = () => {
-    if (!currentTrack.isDownloadable) return;
-    const link = document.createElement('a');
-    link.href = getSupabaseAudioUrl(currentTrack.audioUrl);
-    link.download = `${currentTrack.slug || currentTrack.id}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
@@ -243,6 +237,27 @@ export function DesktopPlayer() {
 
             <button
               type="button"
+              onClick={() => setShowSleepTimer(true)}
+              className={`p-2 rounded-xl transition-colors relative ${
+                sleepTimer
+                  ? 'bg-accent/20 text-accent font-bold'
+                  : 'text-foreground-muted hover:text-foreground hover:bg-background-elevated'
+              }`}
+              title={
+                sleepTimer
+                  ? `Sleep Timer: ${sleepTimer === 'end_of_track' ? 'End of Track' : Math.ceil((sleepTimerRemaining || 0) / 60) + 'm'}`
+                  : 'Set Sleep Timer'
+              }
+              aria-label="Sleep Timer"
+            >
+              <Moon className="w-4 h-4" />
+              {sleepTimer && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-accent animate-pulse" />
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={() => setShowQueue(!showQueue)}
               className={`p-2 rounded-xl transition-colors ${
                 showQueue ? 'bg-accent/20 text-accent font-bold' : 'text-foreground-muted hover:text-foreground hover:bg-background-elevated'
@@ -252,18 +267,6 @@ export function DesktopPlayer() {
             >
               <ListMusic className="w-4 h-4" />
             </button>
-
-            {currentTrack.isDownloadable && (
-              <button
-                type="button"
-                onClick={handleDownload}
-                className="p-2 text-foreground-muted hover:text-foreground hover:bg-background-elevated rounded-xl transition-colors"
-                title="Download Track"
-                aria-label="Download Track"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-            )}
 
             <button
               type="button"
@@ -308,6 +311,11 @@ export function DesktopPlayer() {
         onSelectTrack={(t) => playTrack(t, 0)}
         onRemoveTrack={removeFromQueue}
         onClearQueue={clearQueue}
+      />
+
+      <SleepTimerModal
+        isOpen={showSleepTimer}
+        onClose={() => setShowSleepTimer(false)}
       />
     </>
   );

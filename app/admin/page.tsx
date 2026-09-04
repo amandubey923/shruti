@@ -17,7 +17,7 @@ export default function AdminIngestionPage() {
   const [language, setLanguage] = useState('Hindi');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('');
-  const [isDownloadable, setIsDownloadable] = useState(true);
+  const [isDownloadable] = useState(false);
 
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -289,19 +289,6 @@ export default function AdminIngestionPage() {
             placeholder="Add discourse summary, chapter notes, or quotes..."
             className="w-full bg-background-elevated border border-background-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent resize-none"
           />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="downloadable"
-            checked={isDownloadable}
-            onChange={(e) => setIsDownloadable(e.target.checked)}
-            className="rounded bg-background-elevated border-background-border text-accent focus:ring-accent"
-          />
-          <label htmlFor="downloadable" className="text-xs text-foreground-muted cursor-pointer">
-            Allow listeners to download this recording for offline use
-          </label>
         </div>
 
         {uploadProgress !== null && (

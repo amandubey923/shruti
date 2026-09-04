@@ -16,13 +16,14 @@ import {
   Heart,
   ListMusic,
   Share2,
-  Download,
+  Moon,
 } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
 import { ProgressBar } from './ProgressBar';
 import { SpeedSelector } from './SpeedSelector';
 import { QueueDrawer } from './QueueDrawer';
+import { SleepTimerModal } from './SleepTimerModal';
 import { resolveTrackCover } from '@/lib/utils';
 import { getSupabaseAudioUrl } from '@/lib/supabase';
 
@@ -51,10 +52,13 @@ export function MobileFullPlayer() {
     playTrack,
     removeFromQueue,
     clearQueue,
+    sleepTimer,
+    sleepTimerRemaining,
   } = usePlayback();
 
   const { isFavorite, toggleFavorite } = useLibrary();
   const [showQueue, setShowQueue] = useState(false);
+  const [showSleepTimer, setShowSleepTimer] = useState(false);
 
   if (!currentTrack || !isExpandedPlayer) return null;
 
@@ -72,16 +76,6 @@ export function MobileFullPlayer() {
     } else {
       navigator.clipboard.writeText(shareUrl);
     }
-  };
-
-  const handleDownload = () => {
-    if (!currentTrack.isDownloadable) return;
-    const link = document.createElement('a');
-    link.href = getSupabaseAudioUrl(currentTrack.audioUrl);
-    link.download = `${currentTrack.slug || currentTrack.id}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
@@ -257,12 +251,30 @@ export function MobileFullPlayer() {
           </button>
         </div>
 
-        {/* Secondary Actions: Speed, Share, Download */}
+        {/* Secondary Actions: Speed, Timer, Share */}
         <div className="w-full flex items-center justify-around border-t border-background-border/60 pt-4">
           <SpeedSelector
             currentSpeed={playbackRate}
             onSpeedChange={setSpeed}
           />
+
+          <button
+            type="button"
+            onClick={() => setShowSleepTimer(true)}
+            className={`flex items-center gap-1.5 text-xs font-semibold p-2.5 rounded-xl transition-colors active:bg-background-elevated relative ${
+              sleepTimer ? 'text-accent font-bold' : 'text-foreground-subtle hover:text-foreground'
+            }`}
+            aria-label="Sleep Timer"
+          >
+            <Moon className="w-4 h-4" />
+            <span>
+              {sleepTimer
+                ? sleepTimer === 'end_of_track'
+                  ? 'End of Track'
+                  : `${Math.ceil((sleepTimerRemaining || 0) / 60)}m`
+                : 'Timer'}
+            </span>
+          </button>
 
           <button
             type="button"
@@ -273,18 +285,6 @@ export function MobileFullPlayer() {
             <Share2 className="w-4 h-4" />
             <span>Share</span>
           </button>
-
-          {currentTrack.isDownloadable && (
-            <button
-              type="button"
-              onClick={handleDownload}
-              className="flex items-center gap-1.5 text-xs font-semibold text-foreground-subtle hover:text-foreground transition-colors p-2.5 rounded-xl active:bg-background-elevated"
-              aria-label="Download MP3 file"
-            >
-              <Download className="w-4 h-4" />
-              <span>Download</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -296,6 +296,11 @@ export function MobileFullPlayer() {
         onSelectTrack={(t) => playTrack(t, 0)}
         onRemoveTrack={removeFromQueue}
         onClearQueue={clearQueue}
+      />
+
+      <SleepTimerModal
+        isOpen={showSleepTimer}
+        onClose={() => setShowSleepTimer(false)}
       />
     </div>
   );

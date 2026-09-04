@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Play, Pause, Heart, Download, Volume2 } from 'lucide-react';
+import { Play, Pause, Heart, Volume2 } from 'lucide-react';
 import { AudioTrack } from '@/types/audio';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
@@ -166,20 +166,7 @@ export const TrackRow = memo(function TrackRow({ track, index, onPlay, onDuratio
           <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
         </button>
 
-        {track.isDownloadable && (
-          <a
-            href={getSupabaseAudioUrl(track.audioUrl)}
-            download={`${track.slug || track.id}.mp3`}
-            onClick={(e) => e.stopPropagation()}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-foreground-subtle hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex"
-            title="Download MP3"
-            aria-label="Download MP3"
-          >
-            <Download className="w-4 h-4" />
-          </a>
-        )}
-
-        <span className="text-xs font-mono font-medium text-foreground-muted min-w-[48px] text-right bg-background-elevated/80 px-2 py-1 rounded-md border border-background-border/50">
+        <span className="text-xs font-mono font-medium text-foreground-muted min-w-[48px] text-right bg-background-elevated/80 px-2.5 py-1 rounded-md border border-background-border/50">
           {formatDuration(displayDuration)}
         </span>
       </div>

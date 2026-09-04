@@ -31,7 +31,10 @@ interface PlaybackContextType {
   queue: AudioTrack[];
   queueIndex: number;
   isExpandedPlayer: boolean;
+  sleepTimer: number | null | 'end_of_track';
+  sleepTimerRemaining: number | null;
   setIsExpandedPlayer: (expanded: boolean) => void;
+  setSleepTimer: (option: number | null | 'end_of_track') => void;
   playTrack: (track: AudioTrack, initialPosition?: number) => void;
   pauseTrack: () => void;
   resumeTrack: () => void;
@@ -75,8 +78,12 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<AudioTrack[]>([]);
   const [queueIndex, setQueueIndex] = useState<number>(-1);
   const [isExpandedPlayer, setIsExpandedPlayer] = useState<boolean>(false);
+  const [sleepTimer, setSleepTimerState] = useState<number | null | 'end_of_track'>(null);
+  const [sleepTimerRemaining, setSleepTimerRemaining] = useState<number | null>(null);
 
+  const sleepTimerTargetRef = useRef<number | null>(null);
   const lastSaveTimeRef = useRef<number>(0);
+  const lastFirestoreSaveTimeRef = useRef<number>(0);
 
   // Initialize HTML5 Audio Element singleton
   useEffect(() => {
@@ -128,9 +135,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         updateRealDuration();
       }
       const now = Date.now();
-      if (now - lastSaveTimeRef.current > 10000 && currentTrack) {
+      // Frequent localStorage progress updates (every 3s) for seamless local resume & offline-first
+      if (now - lastSaveTimeRef.current > 3000 && currentTrack) {
         lastSaveTimeRef.current = now;
-        saveProgress(currentTrack, audio.currentTime, audio.duration || currentTrack.duration);
+        saveProgress(currentTrack, audio.currentTime, audio.duration || currentTrack.duration, false);
       }
     };
 
@@ -144,7 +152,8 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     const handlePause = () => {
       setIsPlaying(false);
       if (currentTrack) {
-        saveProgress(currentTrack, audio.currentTime, audio.duration || currentTrack.duration);
+        // Immediate Firestore sync on pause
+        saveProgress(currentTrack, audio.currentTime, audio.duration || currentTrack.duration, true);
       }
     };
 
@@ -175,7 +184,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveProgress = useCallback(
-    (track: AudioTrack, pos: number, dur: number) => {
+    (track: AudioTrack, pos: number, dur: number, forceFirestore = false) => {
       if (!track || isNaN(pos)) return;
       const progressData: PlaybackProgress = {
         audioId: track.id,
@@ -191,6 +200,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         category: typeof track.category === 'string' ? track.category : undefined,
       };
 
+      // 1. Instant local persistence (offline-first, no quota cost)
       try {
         const raw = localStorage.getItem(LOCAL_PROGRESS_KEY);
         const map: Record<string, PlaybackProgress> = raw ? JSON.parse(raw) : {};
@@ -201,7 +211,14 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         console.warn('localStorage save failed', e);
       }
 
-      if (user?.uid) {
+      // 2. Throttled Firestore writes (~25s or on explicit pause/finish)
+      const now = Date.now();
+      const shouldWriteFirestore =
+        forceFirestore ||
+        now - lastFirestoreSaveTimeRef.current >= 25000;
+
+      if (user?.uid && shouldWriteFirestore) {
+        lastFirestoreSaveTimeRef.current = now;
         saveUserProgress(user.uid, progressData);
       }
 
@@ -380,7 +397,13 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
     const handleEnded = () => {
       if (currentTrack) {
-        saveProgress(currentTrack, audio.duration || currentTrack.duration, audio.duration || currentTrack.duration);
+        saveProgress(currentTrack, audio.duration || currentTrack.duration, audio.duration || currentTrack.duration, true);
+      }
+
+      if (sleepTimer === 'end_of_track') {
+        setSleepTimerState(null);
+        pauseTrack();
+        return;
       }
 
       if (repeatMode === 'one') {
@@ -394,7 +417,46 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
     audio.addEventListener('ended', handleEnded);
     return () => audio.removeEventListener('ended', handleEnded);
-  }, [currentTrack, repeatMode, playNext, saveProgress]);
+  }, [currentTrack, repeatMode, playNext, saveProgress, sleepTimer, pauseTrack]);
+
+  // ── Sleep Timer Logic ──────────────────────────────────────────────────────────
+  const setSleepTimer = useCallback((option: number | null | 'end_of_track') => {
+    setSleepTimerState(option);
+    if (!option) {
+      sleepTimerTargetRef.current = null;
+      setSleepTimerRemaining(null);
+      return;
+    }
+    if (option === 'end_of_track') {
+      sleepTimerTargetRef.current = null;
+      setSleepTimerRemaining(null);
+      return;
+    }
+    const target = Date.now() + option * 60 * 1000;
+    sleepTimerTargetRef.current = target;
+    setSleepTimerRemaining(option * 60);
+  }, []);
+
+  useEffect(() => {
+    if (!sleepTimer || sleepTimer === 'end_of_track' || !sleepTimerTargetRef.current) {
+      return;
+    }
+    const interval = setInterval(() => {
+      if (!sleepTimerTargetRef.current) return;
+      const leftMs = sleepTimerTargetRef.current - Date.now();
+      if (leftMs <= 0) {
+        clearInterval(interval);
+        pauseTrack();
+        setSleepTimerState(null);
+        setSleepTimerRemaining(null);
+        sleepTimerTargetRef.current = null;
+      } else {
+        setSleepTimerRemaining(Math.ceil(leftMs / 1000));
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sleepTimer, pauseTrack]);
 
   const addToQueue = useCallback((track: AudioTrack) => {
     setQueue((prev) => [...prev, track]);
@@ -445,7 +507,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         queue,
         queueIndex,
         isExpandedPlayer,
+        sleepTimer,
+        sleepTimerRemaining,
         setIsExpandedPlayer,
+        setSleepTimer,
         playTrack,
         pauseTrack,
         resumeTrack,

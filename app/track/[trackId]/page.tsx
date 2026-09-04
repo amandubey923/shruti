@@ -9,7 +9,6 @@ import {
   Pause,
   Heart,
   Share2,
-  Download,
   ArrowLeft,
   Calendar,
   Clock,
@@ -104,16 +103,6 @@ export default function TrackDetailPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  };
-
-  const handleDownload = () => {
-    if (!track.isDownloadable) return;
-    const link = document.createElement('a');
-    link.href = getSupabaseAudioUrl(track.audioUrl);
-    link.download = `${track.slug || track.id}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
@@ -223,18 +212,6 @@ export default function TrackDetailPage() {
             >
               <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
             </button>
-
-            {track.isDownloadable && (
-              <button
-                type="button"
-                onClick={handleDownload}
-                className="w-11 h-11 rounded-full border border-background-border text-foreground-subtle hover:text-foreground hover:bg-background-elevated transition-colors flex items-center justify-center"
-                title="Download MP3"
-                aria-label="Download MP3"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-            )}
 
             <button
               type="button"
