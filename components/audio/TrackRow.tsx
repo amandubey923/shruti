@@ -41,7 +41,7 @@ export const TrackRow = memo(function TrackRow({ track, index, onPlay, onDuratio
     if (!url) return;
 
     // Subscribe first (never miss the resolution event)
-    const unsub = subscribeDuration(url, (dur) => {
+    const unsub = subscribeDuration(url, (dur: number) => {
       setRealDuration(dur);
       onDurationLoaded?.(track.id, dur);
     });

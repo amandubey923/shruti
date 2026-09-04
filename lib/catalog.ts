@@ -360,10 +360,11 @@ async function buildCatalog(): Promise<{ tracks: AudioTrack[]; series: Series[] 
   // ── Step 3: Group by series and ensure all 12 series are represented ─────────
   const seriesTracksMap = new Map<string, AudioTrack[]>();
 
-  for (const track of trackMap.values()) {
-    if (!seriesTracksMap.has(track.seriesId)) seriesTracksMap.set(track.seriesId, []);
-    seriesTracksMap.get(track.seriesId)!.push(track);
-  }
+  Array.from(trackMap.values()).forEach((track) => {
+    const sId = track.seriesId || 'unknown';
+    if (!seriesTracksMap.has(sId)) seriesTracksMap.set(sId, []);
+    seriesTracksMap.get(sId)!.push(track);
+  });
 
   // Ensure all canonical series exist in the catalog even if they have 0 tracks
   for (const seed of SEED_SERIES) {
@@ -374,7 +375,9 @@ async function buildCatalog(): Promise<{ tracks: AudioTrack[]; series: Series[] 
 
   // ── Step 4: Sort tracks (series then part number) ─────────────────────────
   const tracks = Array.from(trackMap.values()).sort((a, b) => {
-    if (a.seriesId !== b.seriesId) return a.seriesId.localeCompare(b.seriesId);
+    const sA = a.seriesId || '';
+    const sB = b.seriesId || '';
+    if (sA !== sB) return sA.localeCompare(sB);
     return (a.trackNumber ?? 0) - (b.trackNumber ?? 0);
   });
 
