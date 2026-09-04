@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Play, Pause, Heart, Download, Volume2 } from 'lucide-react';
 import { AudioTrack } from '@/types/audio';
@@ -8,19 +8,52 @@ import { usePlayback } from '@/context/PlaybackContext';
 import { useLibrary } from '@/context/LibraryContext';
 import { formatDuration } from '@/lib/utils';
 import { getSupabaseAudioUrl } from '@/lib/supabase';
+import { getCachedDuration, subscribeDuration, loadDuration } from '@/lib/durationCache';
 
 interface TrackRowProps {
   track: AudioTrack;
   index?: number;
   onPlay?: () => void;
+  /** Called when real audio metadata duration is discovered (for parent total recalc) */
+  onDurationLoaded?: (trackId: string, duration: number) => void;
 }
 
-export const TrackRow = memo(function TrackRow({ track, index, onPlay }: TrackRowProps) {
+export const TrackRow = memo(function TrackRow({ track, index, onPlay, onDurationLoaded }: TrackRowProps) {
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
   const { isFavorite, toggleFavorite } = useLibrary();
 
   const isCurrent = currentTrack?.id === track.id;
   const isFav = isFavorite(track.id);
+
+  // ── Lazy real duration ────────────────────────────────────────────────────────
+  // If the track already has a known duration (> 0), use it directly.
+  // Otherwise subscribe to durationCache which loads preload="metadata" lazily.
+  const needsMetadata = !track.duration || track.duration <= 0;
+  const [realDuration, setRealDuration] = useState<number>(() =>
+    needsMetadata
+      ? (getCachedDuration(track.audioUrl) ?? 0)
+      : track.duration
+  );
+
+  useEffect(() => {
+    if (!needsMetadata) return;
+    const url = track.audioUrl;
+    if (!url) return;
+
+    // Subscribe first (never miss the resolution event)
+    const unsub = subscribeDuration(url, (dur) => {
+      setRealDuration(dur);
+      onDurationLoaded?.(track.id, dur);
+    });
+
+    // Trigger loading (no-op if already in flight or resolved)
+    loadDuration(url);
+
+    return unsub;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track.audioUrl]);
+
+  const displayDuration = needsMetadata ? realDuration : track.duration;
 
   const handlePlayClick = () => {
     if (onPlay) {
@@ -148,7 +181,7 @@ export const TrackRow = memo(function TrackRow({ track, index, onPlay }: TrackRo
         )}
 
         <span className="text-xs font-mono font-medium text-foreground-muted min-w-[48px] text-right bg-background-elevated/80 px-2 py-1 rounded-md border border-background-border/50">
-          {formatDuration(track.duration)}
+          {formatDuration(displayDuration)}
         </span>
       </div>
     </div>

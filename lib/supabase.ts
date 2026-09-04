@@ -84,11 +84,12 @@ export const supabase2: SupabaseClient = createClient(
 export const supabaseSources: Array<{
   client: SupabaseClient;
   url: string;
+  publishableKey: string;
   isConfigured: boolean;
   index: number;
 }> = [
-  { client: supabase,  url: cred1.url, isConfigured: cred1.isConfigured, index: 1 },
-  { client: supabase2, url: cred2.url, isConfigured: cred2.isConfigured, index: 2 },
+  { client: supabase,  url: cred1.url, publishableKey: cred1.publishableKey, isConfigured: cred1.isConfigured, index: 1 },
+  { client: supabase2, url: cred2.url, publishableKey: cred2.publishableKey, isConfigured: cred2.isConfigured, index: 2 },
 ];
 
 /**

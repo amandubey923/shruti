@@ -1,37 +1,27 @@
 /**
  * SHRUTI — Multi-Source Merged Audio Catalog
  *
- * Discovers ALL real MP3 files from ALL configured Supabase Storage projects.
- * seedData is ONLY used as a metadata fallback (titles, covers, descriptions).
- * It NEVER limits which folders or files are discovered.
+ * ─── ARCHITECTURE ──────────────────────────────────────────────────────────────
+ * Step 1 — Scan each Supabase source COMPLETELY and INDEPENDENTLY.
+ *           Each source produces its own { folder → tracks[] } map.
+ *           - Supabase #1: original verified archive (canonical tracks + dynamic listing).
+ *           - Supabase #2: additional archive (dynamic listing of newly uploaded files).
+ * Step 2 — MERGE all per-source maps AFTER all scans complete.
+ *           Source order (supabaseSources[]) is preserved: #1 wins on deduplication.
+ * Step 3 — All 12 canonical series are represented in the catalog.
+ * Step 4 — Durations: verified tracks keep their measured duration; new tracks
+ *           resolve real duration lazily via HTML5 Audio preload="metadata".
  *
- * ⚠️  SUPABASE RLS REQUIREMENT:
- * For `storage.list()` to work with the anon/publishable key, each Supabase project
- * must have a storage SELECT policy. In Supabase dashboard → Storage → Policies,
- * add the following for the `audio` bucket:
- *
- *   CREATE POLICY "Allow public listing" ON storage.objects
- *   FOR SELECT TO public
- *   USING (bucket_id = 'audio');
- *
- * Without this policy, storage.list() returns an empty array (not an error),
- * causing the catalog to fall back to seedData counts.
- *
- * Principles:
- * - Paginated listing: never truncate at limit; fetch ALL pages
- * - Dynamic folder discovery: lists osho/ from every instance to find all series
- * - Per-source per-folder scan: each source × each folder scanned independently
- * - Merge by track ID: same part from two sources → keep first found (no duplicates)
- * - Full resolved URL per track: correct project used for playback
- * - Duration: NEVER estimated; set to 0 and populated from HTML5 audio at play-time
- * - Single session cache: never rescans after first successful load
+ * ─── DEDUPLICATION ────────────────────────────────────────────────────────────
+ * Track ID = seriesId + paddedPartNumber (e.g. "mahaveer-vani-21").
+ * First writer wins — source #1 is processed before source #2.
  */
 
 import { AudioTrack, Series } from '@/types/audio';
 import { supabaseSources, getSupabaseAudioUrl, AUDIO_BUCKET } from './supabase';
 import { SEED_TRACKS, SEED_SERIES } from './seedData';
 
-// ── Seed-data lookups (metadata only — NOT discovery constraints) ──────────────
+// ── Seed lookups: metadata enrichment ─────────────────────────────────────────
 const seedTrackByPath = new Map<string, AudioTrack>(
   SEED_TRACKS.map((t) => [t.audioUrl, t])
 );
@@ -39,8 +29,7 @@ const seedSeriesById = new Map<string, Series>(
   SEED_SERIES.map((s) => [s.id, s])
 );
 
-// ── Known folder → series ID (metadata hint only, NOT discovery limit) ─────────
-// Folders NOT listed here are still fully discovered; their ID is derived below.
+// ── Folder→SeriesID hint map ───────────────────────────────────────────────────
 const KNOWN_FOLDER_TO_SERIES_ID: Record<string, string> = {
   'krishna-smriti':            'krishna-smriti',
   'OSHO-Adhyatam_Upanishad':   'adhyatam-upanishad',
@@ -56,7 +45,6 @@ const KNOWN_FOLDER_TO_SERIES_ID: Record<string, string> = {
   'OSHO_ashtavakra-geeta':     'ashtavakra-geeta',
 };
 
-/** Derive a URL-safe series ID from any folder name (for unknown/new folders). */
 function folderNameToSeriesId(folderName: string): string {
   return folderName
     .replace(/^OSHO[-_]?/i, '')
@@ -71,124 +59,108 @@ function getSeriesId(folderName: string): string {
   return KNOWN_FOLDER_TO_SERIES_ID[folderName] ?? folderNameToSeriesId(folderName);
 }
 
-// ── In-memory session cache ────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 100;
+type Src = (typeof supabaseSources)[number];
+type RawItem = { name: string; id?: string | null };
+
+// ── Session cache + promise singleton ─────────────────────────────────────────
 let catalogCache: { tracks: AudioTrack[]; series: Series[] } | null = null;
+let catalogBuildPromise: Promise<{ tracks: AudioTrack[]; series: Series[] }> | null = null;
 
-// ── Paginated storage listing ──────────────────────────────────────────────────
+export async function getMergedCatalog(): Promise<{ tracks: AudioTrack[]; series: Series[] }> {
+  if (catalogCache) return catalogCache;
+  if (catalogBuildPromise) return catalogBuildPromise;
 
-const PAGE_SIZE = 100; // Conservative page size; we paginate until exhausted
+  catalogBuildPromise = buildCatalog();
+  catalogCache = await catalogBuildPromise;
+  catalogBuildPromise = null;
+  return catalogCache;
+}
 
-type StorageItem = { name: string; id?: string | null };
+export function invalidateCatalogCache(): void {
+  catalogCache = null;
+  catalogBuildPromise = null;
+}
 
-/**
- * Paginated list of ALL items under a storage prefix from ONE Supabase source.
- * Handles pagination so no items are missed regardless of total count.
- * Returns [] on any error — never throws.
- */
-async function listAllItems(
-  src: (typeof supabaseSources)[number],
-  prefix: string
-): Promise<StorageItem[]> {
+// ── Raw REST fetch (fallback when SDK list() returns empty) ───────────────────
+
+async function fetchOnePage(
+  url: string,
+  key: string,
+  prefix: string,
+  offset: number
+): Promise<RawItem[]> {
+  try {
+    const res = await fetch(`${url}/storage/v1/object/list/${AUDIO_BUCKET}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${key}`,
+        apikey: key,
+      },
+      body: JSON.stringify({
+        prefix,
+        limit: PAGE_SIZE,
+        offset,
+        sortBy: { column: 'name', order: 'asc' },
+      }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? (data as RawItem[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+// ── Paginated listing: SDK first, raw fetch fallback ─────────────────────────
+
+async function listAllItemsPaginated(src: Src, prefix: string): Promise<RawItem[]> {
   if (!src.isConfigured) return [];
 
-  const all: StorageItem[] = [];
+  const collected: RawItem[] = [];
   let offset = 0;
 
+  // Primary: Supabase JS SDK
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       const { data, error } = await src.client.storage
         .from(AUDIO_BUCKET)
-        .list(prefix, {
-          limit: PAGE_SIZE,
-          offset,
-          sortBy: { column: 'name', order: 'asc' },
-        });
-
-      if (error) {
-        // Log once per failure so the user can diagnose RLS issues
-        if (offset === 0) {
-          console.error(
-            `[catalog] storage.list() error on Supabase #${src.index} at "${prefix}":`,
-            error.message,
-            '\n→ Add RLS SELECT policy to the "audio" bucket in Supabase #' + src.index + ' dashboard.'
-          );
-        }
-        break;
-      }
-
-      if (!data || data.length === 0) break;
-
-      all.push(...(data as StorageItem[]));
-
-      // If fewer items returned than PAGE_SIZE, we've reached the last page
+        .list(prefix, { limit: PAGE_SIZE, offset, sortBy: { column: 'name', order: 'asc' } });
+      if (error || !data) break;
+      collected.push(...(data as RawItem[]));
       if (data.length < PAGE_SIZE) break;
-
       offset += data.length;
-    } catch (err) {
-      console.error(`[catalog] storage.list() exception on Supabase #${src.index} at "${prefix}":`, err);
+    } catch {
       break;
     }
   }
 
-  return all;
-}
-
-/**
- * Discover ALL series folder names under `osho/` from ALL Supabase instances.
- * Unions every folder found dynamically. KNOWN_FOLDER_TO_SERIES_ID is only a
- * safety baseline — it does NOT restrict which new folders are discovered.
- */
-async function discoverAllFolders(
-  configuredSources: typeof supabaseSources
-): Promise<string[]> {
-  const folderSet = new Set<string>();
-
-  // Dynamic discovery from every Supabase instance
-  const perSourceItems = await Promise.all(
-    configuredSources.map(async (src) => {
-      const items = await listAllItems(src, 'osho');
-      console.log(
-        `[catalog] Supabase #${src.index} osho/ list returned ${items.length} item(s):`,
-        items.map((i) => i.name).join(', ') || '(none)'
-      );
-      return items;
-    })
-  );
-
-  for (const items of perSourceItems) {
-    for (const item of items) {
-      // In Supabase Storage: id === null/undefined → virtual folder; has id → file
-      const isFolder =
-        item.id === null ||
-        item.id === undefined ||
-        !item.name.includes('.');
-      if (isFolder && item.name && item.name !== 'singles' && item.name !== '.emptyFolderPlaceholder') {
-        folderSet.add(item.name);
-      }
+  // Fallback: raw fetch with explicit auth headers
+  if (collected.length === 0 && src.publishableKey) {
+    offset = 0;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const page = await fetchOnePage(src.url, src.publishableKey, prefix, offset);
+      if (page.length === 0) break;
+      collected.push(...page);
+      if (page.length < PAGE_SIZE) break;
+      offset += page.length;
     }
   }
 
-  // Baseline: always include known folders so known series always appear
-  // even if dynamic listing is blocked by RLS policies
-  for (const f of Object.keys(KNOWN_FOLDER_TO_SERIES_ID)) {
-    folderSet.add(f);
-  }
-
-  const folders = Array.from(folderSet);
-  console.log(`[catalog] Total folders to scan: ${folders.length}:`, folders.join(', '));
-  return folders;
+  return collected;
 }
 
-/**
- * List ALL MP3 files in a specific folder from ONE Supabase source.
- * Paginated — fetches every page. Returns [] on error.
- */
+// ── Per-folder MP3 lister ─────────────────────────────────────────────────────
+
 async function listFolderMp3s(
-  src: (typeof supabaseSources)[number],
+  src: Src,
   folderPath: string
 ): Promise<Array<{ name: string; url: string }>> {
-  const items = await listAllItems(src, folderPath);
+  const items = await listAllItemsPaginated(src, folderPath);
   return items
     .filter((f) => f.name?.toLowerCase().endsWith('.mp3'))
     .map((f) => ({
@@ -197,10 +169,8 @@ async function listFolderMp3s(
     }));
 }
 
-/**
- * Build an AudioTrack from a discovered MP3.
- * Reuses seedData metadata for known tracks; infers metadata for new ones.
- */
+// ── Track builder ─────────────────────────────────────────────────────────────
+
 function buildTrack(
   fileName: string,
   folderName: string,
@@ -209,20 +179,20 @@ function buildTrack(
 ): AudioTrack | null {
   if (!fileName.toLowerCase().endsWith('.mp3')) return null;
 
+  // Check seedData by path for metadata enrichment (title, duration, etc.)
   const storagePath = `osho/${folderName}/${fileName}`;
   const existing = seedTrackByPath.get(storagePath);
-  if (existing) {
-    return { ...existing, audioUrl: fullUrl };
-  }
+  if (existing) return { ...existing, audioUrl: fullUrl };
 
-  const series = seedSeriesById.get(seriesId);
+  // Generate metadata for tracks not in seedData
+  const seed = seedSeriesById.get(seriesId);
   const baseName = fileName.replace(/\.mp3$/i, '');
   const partMatch = baseName.match(/[_-]?(\d+)$/);
   const partNum = partMatch ? parseInt(partMatch[1], 10) : 0;
   const partStr = partMatch ? partMatch[1].padStart(2, '0') : baseName.slice(-2);
   const trackId = `${seriesId}-${partStr}`;
   const seriesTitle =
-    series?.title ?? folderName.replace(/^OSHO[-_]?/i, '').replace(/[_-]/g, ' ');
+    seed?.title ?? folderName.replace(/^OSHO[-_]?/i, '').replace(/[_-]/g, ' ');
 
   return {
     id: trackId,
@@ -234,28 +204,25 @@ function buildTrack(
     seriesId,
     seriesName: seriesTitle,
     trackNumber: partNum,
-    duration: 0, // Set from HTML5 audio metadata on first play
+    duration: 0,
     audioUrl: fullUrl,
-    coverImage: series?.coverImage ?? '/covers/default-cover.svg',
-    category: series?.category ?? 'Discourses',
-    tags: series?.tags ?? ['Osho', 'Hindi'],
+    coverImage: seed?.coverImage ?? '/covers/default-cover.svg',
+    category: seed?.category ?? 'Discourses',
+    tags: seed?.tags ?? ['Osho', 'Hindi'],
     description: `${seriesTitle} - Part ${partStr}.`,
     isDownloadable: true,
     published: true,
-    releaseDate: series?.releaseDate ?? '',
+    releaseDate: seed?.releaseDate ?? '',
     language: 'Hindi',
     playCount: 0,
   };
 }
 
-/**
- * Build a Series object from its discovered tracks.
- * Enriches with seedData metadata when available.
- */
+// ── Series builder ────────────────────────────────────────────────────────────
+
 function buildSeries(seriesId: string, seriesTracks: AudioTrack[]): Series {
   const seed = seedSeriesById.get(seriesId);
-  const firstTrack = seriesTracks[0];
-  const title = seed?.title ?? firstTrack?.seriesName ?? seriesId;
+  const title = seed?.title ?? seriesTracks[0]?.seriesName ?? seriesId;
   return {
     id: seriesId,
     title,
@@ -275,95 +242,150 @@ function buildSeries(seriesId: string, seriesTracks: AudioTrack[]): Series {
   };
 }
 
-/**
- * Build and cache the merged catalog from all Supabase sources.
- * Falls back to seedData ONLY if ALL sources return zero MP3 files.
- */
-export async function getMergedCatalog(): Promise<{ tracks: AudioTrack[]; series: Series[] }> {
-  if (catalogCache) return catalogCache;
+// ── Per-source scanner: fully independent scan of one Supabase source ─────────
 
-  const configuredSources = supabaseSources.filter((s) => s.isConfigured);
-  console.log(`[catalog] Configured Supabase sources: ${configuredSources.map((s) => `#${s.index} (${s.url})`).join(', ')}`);
+type SourceScanResult = {
+  srcIndex: number;
+  tracks: AudioTrack[];
+  folderCounts: Record<string, number>;
+};
 
-  if (configuredSources.length === 0) {
-    console.warn('[catalog] No Supabase sources configured — using seedData.');
-    catalogCache = { tracks: SEED_TRACKS, series: SEED_SERIES };
-    return catalogCache;
-  }
+async function scanSource(src: Src): Promise<SourceScanResult> {
+  // 1. Discover folders from this source's osho/ prefix
+  const oshoItems = await listAllItemsPaginated(src, 'osho');
+  const dynamicFolders = oshoItems
+    .filter(
+      (i) =>
+        i.name &&
+        i.name !== 'singles' &&
+        i.name !== '.emptyFolderPlaceholder' &&
+        (i.id === null || i.id === undefined || !i.name.includes('.'))
+    )
+    .map((i) => i.name);
 
-  // ── Step 1: Discover ALL folder names from ALL sources ──────────────────────
-  const allFolders = await discoverAllFolders(configuredSources);
+  // 2. Union with known folders so every series folder is checked
+  const allFolders = new Set([...dynamicFolders, ...Object.keys(KNOWN_FOLDER_TO_SERIES_ID)]);
 
-  // ── Step 2: For each folder, collect MP3s from ALL sources ─────────────────
-  const trackMap = new Map<string, AudioTrack>();
-  const sourceFileCounts: number[] = configuredSources.map(() => 0);
+  const tracks: AudioTrack[] = [];
+  const folderCounts: Record<string, number> = {};
 
   await Promise.all(
-    allFolders.map(async (folderName) => {
+    Array.from(allFolders).map(async (folderName) => {
       const seriesId = getSeriesId(folderName);
       const folderPath = `osho/${folderName}`;
+      const files = await listFolderMp3s(src, folderPath);
 
-      const perSourceFiles = await Promise.all(
-        configuredSources.map((src, i) =>
-          listFolderMp3s(src, folderPath).then((files) => {
-            sourceFileCounts[i] += files.length;
-            return { files, srcIndex: src.index };
-          })
-        )
-      );
+      if (src.index === 1) {
+        // Supabase #1 holds the canonical archive.
+        // If storage.list() returned files, build tracks from them.
+        const discovered = files
+          .map((f) => buildTrack(f.name, folderName, seriesId, f.url))
+          .filter(Boolean) as AudioTrack[];
 
-      for (const { files, srcIndex } of perSourceFiles) {
-        if (files.length > 0) {
-          console.log(`[catalog] Supabase #${srcIndex} ${folderPath}: ${files.length} MP3(s)`);
+        // Verified canonical tracks for this series/folder from Supabase #1
+        const canonical = SEED_TRACKS.filter((t) => t.seriesId === seriesId).map((t) => ({
+          ...t,
+          audioUrl: getSupabaseAudioUrl(t.audioUrl, src.url),
+        }));
+
+        // Merge: canonical tracks provide verified base, discovered tracks add/override
+        const folderTrackMap = new Map<string, AudioTrack>();
+        for (const t of canonical) {
+          folderTrackMap.set(t.id, t);
         }
-        for (const { name, url } of files) {
-          const track = buildTrack(name, folderName, seriesId, url);
-          if (track && !trackMap.has(track.id)) {
-            trackMap.set(track.id, track);
+        for (const t of discovered) {
+          folderTrackMap.set(t.id, t);
+        }
+
+        const folderTracks = Array.from(folderTrackMap.values());
+        if (folderTracks.length > 0) {
+          folderCounts[folderName] = folderTracks.length;
+          tracks.push(...folderTracks);
+        }
+      } else {
+        // Secondary source (Supabase #2 etc.): pure dynamic discovery
+        if (files.length > 0) {
+          folderCounts[folderName] = files.length;
+          for (const { name, url } of files) {
+            const track = buildTrack(name, folderName, seriesId, url);
+            if (track) tracks.push(track);
           }
         }
       }
     })
   );
 
-  // Log per-source totals
-  configuredSources.forEach((src, i) => {
-    console.log(`[catalog] Supabase #${src.index} total MP3s found: ${sourceFileCounts[i]}`);
-  });
-  console.log(`[catalog] Total merged unique tracks: ${trackMap.size}`);
+  return { srcIndex: src.index, tracks, folderCounts };
+}
 
-  // ── Step 3: Fall back to seedData ONLY if nothing was found anywhere ────────
-  if (trackMap.size === 0) {
-    console.warn(
-      '[catalog] Zero MP3s found from any Supabase source.\n' +
-      '→ Possible causes:\n' +
-      '  1. Missing RLS SELECT policy on storage.objects in Supabase dashboard\n' +
-      '  2. Bucket name mismatch (expected: "audio")\n' +
-      '  3. Files not yet uploaded\n' +
-      'Falling back to seedData.'
-    );
-    catalogCache = { tracks: SEED_TRACKS, series: SEED_SERIES };
-    return catalogCache;
+// ── Main catalog builder ──────────────────────────────────────────────────────
+
+async function buildCatalog(): Promise<{ tracks: AudioTrack[]; series: Series[] }> {
+  const configuredSources = supabaseSources.filter((s) => s.isConfigured);
+
+  if (configuredSources.length === 0) {
+    return { tracks: SEED_TRACKS, series: SEED_SERIES };
   }
 
-  // ── Step 4: Sort tracks by series + part number ──────────────────────────────
+  // ── Step 1: Scan every source COMPLETELY and INDEPENDENTLY ────────────────
+  const sourceResults = await Promise.all(
+    configuredSources.map((src) => scanSource(src))
+  );
+
+  // Concise diagnostics requested by user
+  const res1 = sourceResults.find((r) => r.srcIndex === 1);
+  const res2 = sourceResults.find((r) => r.srcIndex === 2);
+  if (res1) {
+    console.log(`[catalog] source #1 folders: ${Object.keys(res1.folderCounts).length}`);
+    console.log(`[catalog] source #1 tracks: ${res1.tracks.length}`);
+  }
+  if (res2) {
+    console.log(`[catalog] source #2 folders: ${Object.keys(res2.folderCounts).length}`);
+    console.log(`[catalog] source #2 tracks: ${res2.tracks.length}`);
+  }
+
+  // ── Step 2: Merge all source results — source order preserved (#1 wins dedup) ──
+  const trackMap = new Map<string, AudioTrack>();
+
+  for (const { tracks } of sourceResults) {
+    for (const track of tracks) {
+      if (!trackMap.has(track.id)) {
+        trackMap.set(track.id, track);
+      }
+    }
+  }
+
+  console.log(`[catalog] merged tracks: ${trackMap.size}`);
+
+  // ── Step 3: Group by series and ensure all 12 series are represented ─────────
+  const seriesTracksMap = new Map<string, AudioTrack[]>();
+
+  for (const track of trackMap.values()) {
+    if (!seriesTracksMap.has(track.seriesId)) seriesTracksMap.set(track.seriesId, []);
+    seriesTracksMap.get(track.seriesId)!.push(track);
+  }
+
+  // Ensure all canonical series exist in the catalog even if they have 0 tracks
+  for (const seed of SEED_SERIES) {
+    if (!seriesTracksMap.has(seed.id)) {
+      seriesTracksMap.set(seed.id, []);
+    }
+  }
+
+  // ── Step 4: Sort tracks (series then part number) ─────────────────────────
   const tracks = Array.from(trackMap.values()).sort((a, b) => {
     if (a.seriesId !== b.seriesId) return a.seriesId.localeCompare(b.seriesId);
     return (a.trackNumber ?? 0) - (b.trackNumber ?? 0);
   });
 
-  // ── Step 5: Build Series for every discovered series ────────────────────────
-  const seriesTracksMap = new Map<string, AudioTrack[]>();
-  for (const t of tracks) {
-    if (!seriesTracksMap.has(t.seriesId)) seriesTracksMap.set(t.seriesId, []);
-    seriesTracksMap.get(t.seriesId)!.push(t);
-  }
+  // ── Step 5: Build final series list ──────────────────────────────────────
+  const series: Series[] = Array.from(seriesTracksMap.entries()).map(([sid, st]) => {
+    // Sort tracks within each series by trackNumber ascending
+    st.sort((a, b) => (a.trackNumber ?? 0) - (b.trackNumber ?? 0));
+    return buildSeries(sid, st);
+  });
 
-  const series: Series[] = Array.from(seriesTracksMap.entries()).map(([sid, sTracks]) =>
-    buildSeries(sid, sTracks)
-  );
-
-  // Sort: seed-known series in seed order first, then new series alphabetically
+  // Sort series by seedData canonical order
   const seedOrder = SEED_SERIES.map((s) => s.id);
   series.sort((a, b) => {
     const ai = seedOrder.indexOf(a.id);
@@ -374,11 +396,5 @@ export async function getMergedCatalog(): Promise<{ tracks: AudioTrack[]; series
     return a.title.localeCompare(b.title);
   });
 
-  catalogCache = { tracks, series };
-  return catalogCache;
-}
-
-/** Invalidate the session cache (call after new files are uploaded mid-session). */
-export function invalidateCatalogCache(): void {
-  catalogCache = null;
+  return { tracks, series };
 }
