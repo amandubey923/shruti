@@ -19,7 +19,7 @@ export const SeriesCard = memo(function SeriesCard({ series, featured = false }:
 
   return (
     <div
-      className="group relative bg-background-card hover:bg-background-elevated border border-background-border hover:border-accent/40 rounded-2xl sm:rounded-3xl transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-md"
+      className="group relative bg-background-card hover:bg-background-elevated border border-background-border hover:border-accent/40 rounded-2xl sm:rounded-3xl transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-md h-full"
     >
       {/* Cover Artwork Container */}
       <div
@@ -82,7 +82,7 @@ export const SeriesCard = memo(function SeriesCard({ series, featured = false }:
           </div>
 
           <Link href={`/series/${series.slug || series.id}`} className="group-hover:text-accent transition-colors block">
-            <h3 className="font-serif text-xs sm:text-lg lg:text-xl font-bold text-foreground leading-tight sm:leading-snug line-clamp-2">
+            <h3 className="font-serif text-xs sm:text-lg lg:text-xl font-bold text-foreground leading-tight sm:leading-snug line-clamp-2 min-h-[2.4em] sm:min-h-[2.6em]">
               {series.title}
             </h3>
           </Link>
@@ -93,7 +93,7 @@ export const SeriesCard = memo(function SeriesCard({ series, featured = false }:
             </p>
           )}
 
-          <p className="hidden sm:block text-xs sm:text-sm text-foreground-muted line-clamp-2 sm:line-clamp-3 leading-relaxed">
+          <p className="hidden sm:block text-xs sm:text-sm text-foreground-muted line-clamp-2 leading-relaxed">
             {series.description}
           </p>
         </div>

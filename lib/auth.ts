@@ -6,6 +6,8 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
   User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -15,6 +17,9 @@ import { UserProfile } from '@/types/user';
 export async function signInWithGoogle(): Promise<FirebaseUser | null> {
   if (!isFirebaseConfigured) {
     throw new Error('Firebase configuration is pending. Please configure your .env keys.');
+  }
+  if (typeof window !== 'undefined') {
+    await setPersistence(auth, browserLocalPersistence).catch(() => {});
   }
   const result = await signInWithPopup(auth, googleProvider);
   if (result.user) {
@@ -26,6 +31,9 @@ export async function signInWithGoogle(): Promise<FirebaseUser | null> {
 export async function signInWithEmail(email: string, pass: string): Promise<FirebaseUser | null> {
   if (!isFirebaseConfigured) {
     throw new Error('Firebase configuration is pending. Please configure your .env keys.');
+  }
+  if (typeof window !== 'undefined') {
+    await setPersistence(auth, browserLocalPersistence).catch(() => {});
   }
   const result = await signInWithEmailAndPassword(auth, email, pass);
   if (result.user) {

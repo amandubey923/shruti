@@ -204,6 +204,12 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       if (user?.uid) {
         saveUserProgress(user.uid, progressData);
       }
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('shruti:progress_updated', { detail: progressData })
+        );
+      }
     },
     [user?.uid]
   );

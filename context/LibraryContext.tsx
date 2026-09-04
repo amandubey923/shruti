@@ -23,6 +23,7 @@ import {
   addTrackToPlaylist,
   removeTrackFromPlaylist,
   getUserHistory,
+  saveUserProgress,
 } from '@/lib/firestore';
 
 interface LibraryContextType {
@@ -69,6 +70,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           getUserHistory(user.uid),
         ]);
 
+        // Sync guest favorites to user account
         try {
           const localFavsRaw = localStorage.getItem(LOCAL_FAVORITES_KEY);
           if (localFavsRaw) {
@@ -83,6 +85,38 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         } catch (e) {
           console.warn('Guest favorite merge error', e);
         }
+
+        // Sync guest listening history to user account
+        try {
+          const localHistoryRaw = localStorage.getItem(LOCAL_PROGRESS_KEY);
+          if (localHistoryRaw) {
+            const localHistMap: Record<string, PlaybackProgress> = JSON.parse(localHistoryRaw);
+            const cloudAudioIds = new Set(cloudHistory.map((h) => h.audioId));
+            for (const item of Object.values(localHistMap)) {
+              if (item && item.audioId && !cloudAudioIds.has(item.audioId)) {
+                await saveUserProgress(user.uid, item);
+                cloudHistory.push(item);
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Guest history merge error', e);
+        }
+
+        // Mirror cloud history into local progress store so audio resume works seamlessly
+        try {
+          const mergedMap: Record<string, PlaybackProgress> = {};
+          for (const item of cloudHistory) {
+            if (item && item.audioId) {
+              mergedMap[item.audioId] = item;
+            }
+          }
+          localStorage.setItem(LOCAL_PROGRESS_KEY, JSON.stringify(mergedMap));
+        } catch {}
+
+        cloudHistory.sort(
+          (a, b) => new Date(b.lastPlayedAt).getTime() - new Date(a.lastPlayedAt).getTime()
+        );
 
         setFavorites(Array.from(new Set(cloudFavs)));
         setSavedSeries(cloudSeries);
@@ -121,6 +155,22 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshLibrary();
   }, [refreshLibrary]);
+
+  useEffect(() => {
+    const handleProgressUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<PlaybackProgress>;
+      if (customEvent.detail && customEvent.detail.audioId) {
+        const updatedItem = customEvent.detail;
+        setHistory((prev) => {
+          const filtered = prev.filter((h) => h.audioId !== updatedItem.audioId);
+          return [updatedItem, ...filtered];
+        });
+      }
+    };
+
+    window.addEventListener('shruti:progress_updated', handleProgressUpdate);
+    return () => window.removeEventListener('shruti:progress_updated', handleProgressUpdate);
+  }, []);
 
   const toggleFavorite = useCallback(async (audioId: string) => {
     setFavorites((prev) => {

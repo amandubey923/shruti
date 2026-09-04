@@ -32,7 +32,7 @@ export function AudioCard({ track }: AudioCardProps) {
   };
 
   return (
-    <div className="group relative bg-background-card hover:bg-background-elevated border border-background-border hover:border-accent/40 rounded-3xl p-4 transition-all duration-300 flex flex-col justify-between shadow-xs hover:shadow-md">
+    <div className="group relative bg-background-card hover:bg-background-elevated border border-background-border hover:border-accent/40 rounded-3xl p-4 transition-all duration-300 flex flex-col justify-between shadow-xs hover:shadow-md h-full">
       <div className="relative aspect-square w-full rounded-2xl overflow-hidden mb-3.5 bg-background-elevated border border-background-border/50">
         {coverUrl ? (
           <Image

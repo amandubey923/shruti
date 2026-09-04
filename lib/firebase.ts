@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, Auth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
@@ -27,12 +27,18 @@ let storage: FirebaseStorage;
 try {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
+  if (typeof window !== 'undefined') {
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+  }
   db = getFirestore(app);
   storage = getStorage(app);
 } catch (error) {
   console.warn('Firebase initialization notice:', error);
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
+  if (typeof window !== 'undefined') {
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+  }
   db = getFirestore(app);
   storage = getStorage(app);
 }
@@ -41,3 +47,4 @@ export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export { app, auth, db, storage };
+

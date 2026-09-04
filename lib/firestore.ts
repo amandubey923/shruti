@@ -180,13 +180,14 @@ export async function saveUserProgress(
 export async function getUserHistory(userId: string): Promise<PlaybackProgress[]> {
   if (!isFirebaseConfigured || !userId) return [];
   try {
-    const q = query(
-      collection(db, 'users', userId, 'progress'),
-      orderBy('lastPlayedAt', 'desc'),
-      limit(50)
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => d.data() as PlaybackProgress);
+    const colRef = collection(db, 'users', userId, 'progress');
+    const snap = await getDocs(colRef);
+    const list = snap.docs.map((d) => d.data() as PlaybackProgress);
+    return list.sort((a, b) => {
+      const timeA = a.lastPlayedAt ? new Date(a.lastPlayedAt).getTime() : 0;
+      const timeB = b.lastPlayedAt ? new Date(b.lastPlayedAt).getTime() : 0;
+      return timeB - timeA;
+    });
   } catch (err) {
     console.warn('Failed to load history from Firestore:', err);
     return [];

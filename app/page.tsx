@@ -171,7 +171,7 @@ export default function HomePage() {
           {seriesList.map((series, idx) => (
             <div
               key={series.id}
-              className={idx >= 4 && !showAllMobileSeries ? 'hidden sm:block' : 'block'}
+              className={idx >= 4 && !showAllMobileSeries ? 'hidden sm:block h-full' : 'block h-full'}
             >
               <SeriesCard series={series} />
             </div>
